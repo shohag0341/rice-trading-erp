@@ -1,1 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard - Rice Trading ERP Pro</title>
 
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+
+<link rel="stylesheet" href="css/variables.css">
+<link rel="stylesheet" href="css/main.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+
+<div class="app-shell">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="main-content">
+        <header class="top-header" id="topHeader"></header>
+
+        <main class="page-content">
+            <div class="stats-grid" id="statsGrid">
+                <div class="skeleton" style="height:120px;"></div>
+                <div class="skeleton" style="height:120px;"></div>
+                <div class="skeleton" style="height:120px;"></div>
+                <div class="skeleton" style="height:120px;"></div>
+                <div class="skeleton" style="height:120px;"></div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="card-box">
+                    <div class="card-box-title">Purchase / Sales / Profit Trend</div>
+                    <canvas id="trendChart" height="110"></canvas>
+                </div>
+                <div class="card-box">
+                    <div class="card-box-title">Warehouse Utilization</div>
+                    <div id="warehouseList"></div>
+                </div>
+            </div>
+
+            <div class="bottom-grid">
+                <div class="card-box">
+                    <div class="card-box-title">Top Farmers</div>
+                    <div id="topFarmersList"></div>
+                </div>
+                <div class="card-box">
+                    <div class="card-box-title">Top Buyers</div>
+                    <div id="topBuyersList"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script type="module" src="js/dashboard.js"></script>
+</body>
+</html>
