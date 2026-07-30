@@ -1,1 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Warehouses - Rice Trading ERP Pro</title>
 
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<link rel="stylesheet" href="css/variables.css">
+<link rel="stylesheet" href="css/main.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/farmers.css">
+</head>
+<body>
+
+<div class="app-shell">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="main-content">
+        <header class="top-header" id="topHeader"></header>
+
+        <main class="page-content">
+            <div class="toolbar">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="searchInput" placeholder="Search by name, location, or manager...">
+                </div>
+                <button class="btn-primary" id="addWarehouseBtn">
+                    <i class="fa-solid fa-plus"></i> Add Warehouse
+                </button>
+            </div>
+
+            <div class="data-table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Location</th>
+                            <th>Capacity</th>
+                            <th>Utilization</th>
+                            <th>Manager</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="warehousesTableBody">
+                        <tr><td colspan="6" class="table-empty">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Add/Edit Warehouse Modal -->
+<div class="modal-overlay" id="warehouseModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3 id="modalTitle">Add Warehouse</h3>
+            <button class="modal-close" id="modalCloseBtn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <form id="warehouseForm">
+            <div class="modal-body">
+                <div class="form-group-modal">
+                    <label for="warehouseName">Warehouse Name *</label>
+                    <input type="text" id="warehouseName" placeholder="e.g. Central Warehouse" required>
+                </div>
+
+                <div class="form-group-modal">
+                    <label for="warehouseLocation">Location</label>
+                    <input type="text" id="warehouseLocation" placeholder="Address / area">
+                </div>
+
+                <div class="form-group-modal">
+                    <label for="warehouseCapacity">Capacity (Maund) *</label>
+                    <input type="number" id="warehouseCapacity" step="0.01" placeholder="e.g. 5000" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group-modal">
+                        <label for="warehouseManagerName">Manager Name</label>
+                        <input type="text" id="warehouseManagerName" placeholder="Manager name">
+                    </div>
+                    <div class="form-group-modal">
+                        <label for="warehouseManagerPhone">Manager Phone</label>
+                        <input type="text" id="warehouseManagerPhone" placeholder="01xxxxxxxxx">
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" id="cancelBtn">Cancel</button>
+                <button type="submit" class="btn-primary" id="submitBtn">Save Warehouse</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script type="module" src="js/warehouses.js"></script>
+</body>
+</html>
