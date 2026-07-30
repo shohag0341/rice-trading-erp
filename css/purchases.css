@@ -1,1 +1,68 @@
+.invoice-badge {
+    font-family: monospace;
+    font-weight: 700;
+    color: var(--color-primary);
+    background: rgba(37,99,235,0.08);
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+}
 
+.payment-badge-paid { background: rgba(22,163,74,0.12); color: var(--color-accent); }
+.payment-badge-partial { background: rgba(249,115,22,0.12); color: var(--color-warning); }
+.payment-badge-due { background: rgba(220,38,38,0.12); color: var(--color-danger); }
+
+.modal-box-lg { max-width: 640px; }
+
+.form-group-modal select {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 13px;
+    outline: none;
+    font-family: var(--font-main);
+}
+
+.form-group-modal select:focus,
+.form-group-modal input:focus { border-color: var(--color-primary); }
+
+.calc-summary {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    margin: 14px 0;
+}
+
+.calc-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    padding: 4px 0;
+    color: var(--text-secondary);
+}
+
+.calc-row.total {
+    border-top: 1px solid var(--border-color);
+    margin-top: 6px;
+    padding-top: 10px;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--text-primary);
+}
+
+.section-divider {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+    font-weight: 700;
+    margin: 18px 0 10px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--border-color);
+}
+
+.section-divider:first-child { border-top: none; padding-top: 0; margin-top: 0; }
