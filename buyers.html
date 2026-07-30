@@ -1,1 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buyers - Rice Trading ERP Pro</title>
 
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<link rel="stylesheet" href="css/variables.css">
+<link rel="stylesheet" href="css/main.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/farmers.css">
+</head>
+<body>
+
+<div class="app-shell">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="main-content">
+        <header class="top-header" id="topHeader"></header>
+
+        <main class="page-content">
+            <div class="toolbar">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="searchInput" placeholder="Search by name, phone, or contact person...">
+                </div>
+                <button class="btn-primary" id="addBuyerBtn">
+                    <i class="fa-solid fa-plus"></i> Add Buyer
+                </button>
+            </div>
+
+            <div class="data-table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Phone</th>
+                            <th>Contact Person</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="buyersTableBody">
+                        <tr><td colspan="6" class="table-empty">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Add/Edit Buyer Modal -->
+<div class="modal-overlay" id="buyerModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3 id="modalTitle">Add Buyer</h3>
+            <button class="modal-close" id="modalCloseBtn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <form id="buyerForm">
+            <div class="modal-body">
+                <div class="form-group-modal">
+                    <label for="buyerName">Buyer Name *</label>
+                    <input type="text" id="buyerName" placeholder="e.g. Rahman Rice Mill" required>
+                </div>
+
+                <div class="form-group-modal">
+                    <label for="buyerType">Buyer Type *</label>
+                    <select id="buyerType" required
+                        style="width:100%; padding:10px 12px; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:13px; outline:none; font-family:var(--font-main);">
+                        <option value="rice_mill">Rice Mill</option>
+                        <option value="arat">Arat</option>
+                        <option value="wholesaler">Wholesaler</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group-modal">
+                        <label for="buyerPhone">Phone</label>
+                        <input type="text" id="buyerPhone" placeholder="01xxxxxxxxx">
+                    </div>
+                    <div class="form-group-modal">
+                        <label for="buyerContactPerson">Contact Person</label>
+                        <input type="text" id="buyerContactPerson" placeholder="Person name">
+                    </div>
+                </div>
+
+                <div class="form-group-modal">
+                    <label for="buyerAddress">Address</label>
+                    <input type="text" id="buyerAddress" placeholder="Full address">
+                </div>
+
+                <div class="form-group-modal">
+                    <label for="buyerRemarks">Remarks</label>
+                    <textarea id="buyerRemarks" rows="2" placeholder="Optional notes"></textarea>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" id="cancelBtn">Cancel</button>
+                <button type="submit" class="btn-primary" id="submitBtn">Save Buyer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script type="module" src="js/buyers.js"></script>
+</body>
+</html>
