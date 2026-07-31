@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inventory - Rice Trading ERP Pro</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<link rel="stylesheet" href="css/variables.css">
+<link rel="stylesheet" href="css/main.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/farmers.css">
+<link rel="stylesheet" href="css/purchases.css">
+<link rel="stylesheet" href="css/profile.css">
+<link rel="stylesheet" href="css/inventory.css">
+</head>
+<body>
+
+<div class="app-shell">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="main-content">
+        <header class="top-header" id="topHeader"></header>
+
+        <main class="page-content">
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="stockTab">
+                    <i class="fa-solid fa-boxes-stacked"></i> Current Stock
+                </button>
+                <button class="tab-btn" data-tab="movementsTab">
+                    <i class="fa-solid fa-right-left"></i> Stock Movements
+                </button>
+                <button class="tab-btn" data-tab="damagedTab">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Damaged Stock
+                </button>
+            </div>
+
+            <!-- Tab 1: Current Stock -->
+            <div class="tab-panel active" id="stockTab">
+                <div id="stockCardsContainer"></div>
+            </div>
+
+            <!-- Tab 2: Stock Movements -->
+            <div class="tab-panel" id="movementsTab">
+                <div class="data-table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Date/Time</th><th>Type</th><th>Warehouse</th><th>Variety</th><th>Quantity</th></tr>
+                        </thead>
+                        <tbody id="movementsTableBody">
+                            <tr><td colspan="5" class="table-empty">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tab 3: Damaged Stock -->
+            <div class="tab-panel" id="damagedTab">
+                <div class="toolbar">
+                    <div></div>
+                    <button class="btn-primary" id="addDamageBtn">
+                        <i class="fa-solid fa-plus"></i> Record Damage
+                    </button>
+                </div>
+
+                <div class="data-table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Date</th><th>Warehouse</th><th>Variety</th><th>Weight</th><th>Est. Loss</th><th>Reason</th></tr>
+                        </thead>
+                        <tbody id="damagedTableBody">
+                            <tr><td colspan="6" class="table-empty">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Damaged Stock Modal -->
+<div class="modal-overlay" id="damageModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>Record Damaged Stock</h3>
+            <button class="modal-close" id="damageModalClose"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <form id="damageForm">
+            <div class="modal-body">
+                <div class="form-group-modal">
+                    <label for="damageWarehouse">Warehouse *</label>
+                    <select id="damageWarehouse" required><option value="">Loading...</option></select>
+                </div>
+
+                <div class="form-group-modal">
+                    <label for="damageVariety">Paddy Variety *</label>
+                    <select id="damageVariety" required><option value="">Loading...</option></select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group-modal">
+                        <label for="damageWeight">Weight (KG) *</label>
+                        <input type="number" id="damageWeight" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group-modal">
+                        <label for="damageDate">Date *</label>
+                        <input type="date" id="damageDate" required>
+                    </div>
+                </div>
+
+                <div class="form-group-modal">
+                    <label for="damageLoss">Estimated Loss (৳)</label>
+                    <input type="number" id="damageLoss" step="0.01" min="0" value="0">
+                </div>
+
+                <div class="form-group-modal">
+                    <label for="damageReason">Reason</label>
+                    <textarea id="damageReason" rows="2" placeholder="e.g. Water damage, pest infestation"></textarea>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" id="damageCancelBtn">Cancel</button>
+                <button type="submit" class="btn-primary" id="damageSubmitBtn">Save Record</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script type="module" src="js/inventory.js"></script>
+</body>
+                      </html>
