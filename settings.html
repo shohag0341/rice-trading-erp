@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Settings - Rice Trading ERP Pro</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<link rel="stylesheet" href="css/variables.css">
+<link rel="stylesheet" href="css/main.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/farmers.css">
+<link rel="stylesheet" href="css/settings.css">
+</head>
+<body>
+
+<div class="app-shell">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="main-content">
+        <header class="top-header" id="topHeader"></header>
+
+        <main class="page-content">
+            <div class="settings-tabs">
+                <button class="settings-tab-btn active" data-tab="businessTab">
+                    <i class="fa-solid fa-building"></i> Business Info
+                </button>
+                <button class="settings-tab-btn" data-tab="usersTab">
+                    <i class="fa-solid fa-users"></i> User Management
+                </button>
+            </div>
+
+            <!-- Business Info Tab -->
+            <div class="settings-panel active" id="businessTab">
+                <div class="settings-form-card">
+                    <form id="businessSettingsForm">
+                        <div class="settings-form-group">
+                            <label for="businessName">Business Name *</label>
+                            <input type="text" id="businessName" required>
+                        </div>
+
+                        <div class="settings-form-group">
+                            <label for="businessAddress">Address</label>
+                            <input type="text" id="businessAddress" placeholder="Full business address">
+                        </div>
+
+                        <div class="settings-form-group">
+                            <label for="businessPhone">Phone</label>
+                            <input type="text" id="businessPhone" placeholder="01xxxxxxxxx">
+                        </div>
+
+                        <div class="settings-form-group">
+                            <label for="businessEmail">Email</label>
+                            <input type="email" id="businessEmail" placeholder="business@example.com">
+                        </div>
+
+                        <div class="settings-form-group">
+                            <label for="businessCurrency">Currency</label>
+                            <select id="businessCurrency">
+                                <option value="BDT">BDT (৳)</option>
+                                <option value="USD">USD ($)</option>
+                            </select>
+                        </div>
+
+                        <div class="settings-form-group">
+                            <label for="kgPerMaund">KG per Maund</label>
+                            <input type="number" id="kgPerMaund" step="0.01">
+                        </div>
+
+                        <div class="settings-form-group">
+                            <label for="lowStockThreshold">Low Stock Alert Threshold (Maund)</label>
+                            <input type="number" id="lowStockThreshold" step="0.01">
+                        </div>
+
+                        <button type="submit" class="btn-primary" id="businessSubmitBtn">Save Settings</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- User Management Tab -->
+            <div class="settings-panel" id="usersTab">
+                <div class="data-table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Phone</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Joined</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <tr><td colspan="5" class="table-empty">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="margin-top:16px; padding:14px 18px; background:rgba(37,99,235,0.08); border-radius:var(--radius-sm); font-size:12px; color:var(--text-secondary);">
+                    <i class="fa-solid fa-circle-info"></i> To add a new user, go to your Supabase Dashboard → Authentication → Users → Add user. New users get "Staff" role by default and can be changed here.
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script type="module" src="js/settings.js"></script>
+</body>
+</html>
