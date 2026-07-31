@@ -104,3 +104,45 @@ export async function getStockForWarehouseVariety(warehouseId, varietyId) {
     if (error) throw error;
     return data || { current_maund: 0, current_weight_kg: 0 };
 }
+
+
+
+
+
+
+
+// ---------- Delete damaged stock record (also reverses the stock movement) ----------
+export async function deleteDamagedStock(damageId, warehouseId, varietyId, weightKg, damageDate) {
+    // 1. Delete the damaged_stock record
+    const { error: deleteError } = await supabase
+        .from('damaged_stock')
+        .delete()
+        .eq('id', damageId);
+
+    if (deleteError) throw deleteError;
+
+    // 2. Find and delete the matching stock_movements entry to reverse the stock reduction
+    const { data: movements, error: findError } = await supabase
+        .from('stock_movements')
+        .select('id')
+        .eq('warehouse_id', warehouseId)
+        .eq('paddy_variety_id', varietyId)
+        .eq('movement_type', 'damage')
+        .eq('weight_kg', -weightKg)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+    if (findError) throw findError;
+
+    if (movements && movements.length > 0) {
+        const { error: movementDeleteError } = await supabase
+            .from('stock_movements')
+            .delete()
+            .eq('id', movements[0].id);
+
+        if (movementDeleteError) throw movementDeleteError;
+    }
+}
+
+
+
