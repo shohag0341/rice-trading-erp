@@ -99,14 +99,20 @@ async function renderPurchaseReport() {
 
     const totalWeight = data.reduce((s, p) => s + Number(p.weight_kg), 0);
     const totalMaund = data.reduce((s, p) => s + Number(p.maund), 0);
+
+
+
+    
     const totalCost = data.reduce((s, p) => s + Number(p.net_cost), 0);
+    const totalGross = data.reduce((s, p) => s + Number(p.gross_amount), 0);
     const totalPaid = data.reduce((s, p) => s + Number(p.amount_paid), 0);
 
     summaryGrid.innerHTML = `
         <div class="summary-mini-card"><div class="summary-mini-label">Transactions</div><div class="summary-mini-value">${data.length}</div></div>
         <div class="summary-mini-card"><div class="summary-mini-label">Total Quantity</div><div class="summary-mini-value">${fmt(totalMaund)} Md</div></div>
         <div class="summary-mini-card"><div class="summary-mini-label">Total Cost</div><div class="summary-mini-value">৳${fmt(totalCost)}</div></div>
-        <div class="summary-mini-card"><div class="summary-mini-label">Total Due</div><div class="summary-mini-value">৳${fmt(totalCost - totalPaid)}</div></div>
+
+        <div class="summary-mini-card"><div class="summary-mini-label">Farmer Due</div><div class="summary-mini-value">৳${fmt(totalGross - totalPaid)}</div></div>
     `;
 
     if (!data.length) {
