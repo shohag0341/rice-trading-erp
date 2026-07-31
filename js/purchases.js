@@ -105,11 +105,17 @@ function updateCalculationPreview() {
     document.getElementById('calcNetCost').textContent = '৳' + fmt(netCost);
     document.getElementById('calcDue').textContent = '৳' + fmt(due > 0 ? due : 0);
 
-    // Auto-set payment status based on amount paid
+   
+    
+    // Auto-set payment status based on amount paid vs GROSS amount
+    // (Farmer is only owed the paddy price, not transport/labour/food costs)
     const statusSelect = document.getElementById('purchasePaymentStatus');
     if (amountPaid <= 0) statusSelect.value = 'due';
-    else if (amountPaid >= netCost && netCost > 0) statusSelect.value = 'paid';
+    else if (amountPaid >= grossAmount && grossAmount > 0) statusSelect.value = 'paid';
     else statusSelect.value = 'partial';
+
+
+    
 }
 
 ['purchaseWeight', 'purchasePrice', 'purchaseTransport', 'purchaseLabour', 'purchaseFood', 'purchaseOther', 'purchaseAmountPaid']
