@@ -1,10 +1,16 @@
 // Handles fetching filtered report data for Purchases, Sales, Expenses, Profit
 import { supabase } from './supabase-client.js';
 
+
+
+
+
 export async function getPurchaseReport(startDate, endDate) {
     const { data, error } = await supabase
         .from('purchases')
-        .select('*, farmers(name, village), warehouses(name), paddy_varieties(name)')
+        .select('*, farmers(id, name, village), warehouses(name), paddy_varieties(name)')
+
+        
         .gte('purchase_date', startDate)
         .lte('purchase_date', endDate)
         .order('purchase_date', { ascending: false });
@@ -16,7 +22,12 @@ export async function getPurchaseReport(startDate, endDate) {
 export async function getSalesReport(startDate, endDate) {
     const { data, error } = await supabase
         .from('sales')
-        .select('*, buyers(name, buyer_type), warehouses(name), paddy_varieties(name)')
+        .select('*, buyers(id, name, buyer_type), warehouses(name), paddy_varieties(name)')
+
+
+
+
+        
         .gte('sale_date', startDate)
         .lte('sale_date', endDate)
         .order('sale_date', { ascending: false });
