@@ -169,11 +169,19 @@ function updateCalculationPreview() {
         weightWarning.style.display = 'none';
     }
 
-    // Auto-set payment status
+   
+    
+    
+    // Auto-set payment status based on amount received vs GROSS amount
+    // (Buyer owes the paddy sale price; transport/labour/commission are business costs)
     const statusSelect = document.getElementById('salePaymentStatus');
     if (amountReceived <= 0) statusSelect.value = 'due';
-    else if (amountReceived >= netAmount && netAmount > 0) statusSelect.value = 'paid';
+    else if (amountReceived >= grossAmount && grossAmount > 0) statusSelect.value = 'paid';
     else statusSelect.value = 'partial';
+
+
+
+    
 }
 
 ['saleWeight', 'saleSellingPrice', 'saleTransport', 'saleLabour', 'saleCommission', 'saleOther', 'saleAmountReceived']
