@@ -149,3 +149,50 @@ export async function recordFarmerPayment(purchaseId, farmerId, amount, paymentM
 
     if (updateError) throw updateError;
 }
+
+
+
+
+
+// ---------- Recent payment history + delete/reverse ----------
+export async function getFarmerPaymentsList(farmerId) {
+    const { data, error } = await supabase
+        .from('farmer_payments')
+        .select('*, purchases(invoice_no)')
+        .eq('farmer_id', farmerId)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+    if (error) throw error;
+    return data;
+}
+
+export async function deleteFarmerPayment(paymentId, purchaseId, amount) {
+    // 1. Delete the payment record
+    const { error: deleteError } = await supabase
+        .from('farmer_payments')
+        .delete()
+        .eq('id', paymentId);
+
+    if (deleteError) throw deleteError;
+
+    // 2. Reverse the amount from the purchase's amount_paid and recalculate status
+    const { data: purchase, error: fetchError } = await supabase
+        .from('purchases')
+        .select('gross_amount, amount_paid')
+        .eq('id', purchaseId)
+        .single();
+
+    if (fetchError) throw fetchError;
+
+    const newAmountPaid = Math.max(0, Number(purchase.amount_paid) - Number(amount));
+    const newStatus = newAmountPaid >= Number(purchase.gross_amount) ? 'paid'
+        : newAmountPaid > 0 ? 'partial' : 'due';
+
+    const { error: updateError } = await supabase
+        .from('purchases')
+        .update({ amount_paid: newAmountPaid, payment_status: newStatus })
+        .eq('id', purchaseId);
+
+    if (updateError) throw updateError;
+}
