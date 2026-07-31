@@ -86,3 +86,21 @@ export async function createDamagedStock(damageData, userId) {
 
     return data;
 }
+
+
+
+
+
+
+// ---------- Get available stock for a specific warehouse + variety (used for damage validation) ----------
+export async function getStockForWarehouseVariety(warehouseId, varietyId) {
+    const { data, error } = await supabase
+        .from('current_stock')
+        .select('current_maund, current_weight_kg')
+        .eq('warehouse_id', warehouseId)
+        .eq('paddy_variety_id', varietyId)
+        .maybeSingle();
+
+    if (error) throw error;
+    return data || { current_maund: 0, current_weight_kg: 0 };
+}
