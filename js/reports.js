@@ -1,7 +1,12 @@
 import { initLayout } from './layout.js';
+
+
 import {
-    getPurchaseReport, getSalesReport, getExpenseReport, getProfitReport, getDateRange
+    getPurchaseReport, getSalesReport, getExpenseReport, getProfitReport, getDateRange,
+    getCombinedCostReport
 } from './services/report-service.js';
+
+
 
 await initLayout('reports');
 
@@ -83,9 +88,16 @@ async function loadReport() {
             await renderSalesReport();
         } else if (currentReportType === 'expense') {
             await renderExpenseReport();
+
+            
         } else if (currentReportType === 'profit') {
             await renderProfitReport();
+        } else if (currentReportType === 'costanalysis') {
+            await renderCostAnalysisReport();
         }
+
+
+        
     } catch (err) {
         showToast('Failed to load report: ' + err.message, 'error');
         summaryGrid.innerHTML = '';
@@ -281,6 +293,56 @@ async function renderProfitReport() {
         </div>
     `;
 }
+
+
+
+// ---------- Cost Analysis Report (Combined, but kept separate by source) ----------
+async function renderCostAnalysisReport() {
+    const report = await getCombinedCostReport(currentStartDate, currentEndDate);
+
+    summaryGrid.innerHTML = `
+        <div class="summary-mini-card"><div class="summary-mini-label">Purchase-side Costs</div><div class="summary-mini-value">৳${fmt(report.totalPurchaseCost)}</div></div>
+        <div class="summary-mini-card"><div class="summary-mini-label">Sales-side Costs</div><div class="summary-mini-value">৳${fmt(report.totalSalesCost)}</div></div>
+        <div class="summary-mini-card"><div class="summary-mini-label">Operating Expenses</div><div class="summary-mini-value">৳${fmt(report.totalOperatingExpense)}</div></div>
+        <div class="summary-mini-card"><div class="summary-mini-label">Grand Total</div><div class="summary-mini-value" style="color:var(--color-danger);">৳${fmt(report.grandTotal)}</div></div>
+    `;
+
+    tableContainer.innerHTML = `
+        <div class="card-box" style="margin-bottom:18px;">
+            <div class="card-box-title"><i class="fa-solid fa-cart-shopping"></i> Purchase-side Costs (from buying paddy)</div>
+            <div class="calc-summary">
+                <div class="calc-row"><span>Transport</span><span>৳${fmt(report.purchaseCosts.transport)}</span></div>
+                <div class="calc-row"><span>Labour</span><span>৳${fmt(report.purchaseCosts.labour)}</span></div>
+                <div class="calc-row"><span>Food</span><span>৳${fmt(report.purchaseCosts.food)}</span></div>
+                <div class="calc-row"><span>Other</span><span>৳${fmt(report.purchaseCosts.other)}</span></div>
+                <div class="calc-row total"><span>Subtotal</span><span>৳${fmt(report.totalPurchaseCost)}</span></div>
+            </div>
+        </div>
+
+        <div class="card-box" style="margin-bottom:18px;">
+            <div class="card-box-title"><i class="fa-solid fa-money-bill-trend-up"></i> Sales-side Costs (from selling rice)</div>
+            <div class="calc-summary">
+                <div class="calc-row"><span>Transport</span><span>৳${fmt(report.salesCosts.transport)}</span></div>
+                <div class="calc-row"><span>Labour</span><span>৳${fmt(report.salesCosts.labour)}</span></div>
+                <div class="calc-row"><span>Commission</span><span>৳${fmt(report.salesCosts.commission)}</span></div>
+                <div class="calc-row"><span>Other</span><span>৳${fmt(report.salesCosts.other)}</span></div>
+                <div class="calc-row total"><span>Subtotal</span><span>৳${fmt(report.totalSalesCost)}</span></div>
+            </div>
+        </div>
+
+        <div class="card-box">
+            <div class="card-box-title"><i class="fa-solid fa-receipt"></i> Operating Expenses (rent, electricity, etc.)</div>
+            <div class="calc-summary">
+                ${Object.keys(report.expensesByCategory).length ? Object.entries(report.expensesByCategory).map(([cat, amount]) => `
+                    <div class="calc-row"><span>${cat}</span><span>৳${fmt(amount)}</span></div>
+                `).join('') : '<div class="calc-row"><span>No operating expenses in this period</span></div>'}
+                <div class="calc-row total"><span>Subtotal</span><span>৳${fmt(report.totalOperatingExpense)}</span></div>
+            </div>
+        </div>
+    `;
+}
+
+
 
 // ---------- Init: default to "This Month" ----------
 document.querySelector('.quick-range-btn[data-range="month"]').click();
