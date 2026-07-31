@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sales - Rice Trading ERP Pro</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<link rel="stylesheet" href="css/variables.css">
+<link rel="stylesheet" href="css/main.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/farmers.css">
+<link rel="stylesheet" href="css/purchases.css">
+</head>
+<body>
+
+<div class="app-shell">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="main-content">
+        <header class="top-header" id="topHeader"></header>
+
+        <main class="page-content">
+            <div class="toolbar">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="searchInput" placeholder="Search by invoice number...">
+                </div>
+                <button class="btn-primary" id="addSaleBtn">
+                    <i class="fa-solid fa-plus"></i> New Sale
+                </button>
+            </div>
+
+            <div class="data-table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Invoice</th>
+                            <th>Date</th>
+                            <th>Buyer</th>
+                            <th>Variety</th>
+                            <th>Quantity</th>
+                            <th>Net Amount</th>
+                            <th>Profit</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="salesTableBody">
+                        <tr><td colspan="8" class="table-empty">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Add/Edit Sale Modal -->
+<div class="modal-overlay" id="saleModal">
+    <div class="modal-box modal-box-lg">
+        <div class="modal-header">
+            <h3 id="modalTitle">New Sale</h3>
+            <button class="modal-close" id="modalCloseBtn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <form id="saleForm">
+            <div class="modal-body">
+
+                <div class="section-divider">Basic Info</div>
+                <div class="form-row">
+                    <div class="form-group-modal">
+                        <label for="saleInvoiceNo">Invoice No *</label>
+                        <input type="text" id="saleInvoiceNo" required>
+                    </div>
+                    <div class="form-group-modal">
+                        <label for="saleDate">Sale Date *</label>
+                        <input type="date" id="saleDate" required>
+                    </div>
+                </div>
+
+                <div class="form-group-modal">
+                    <label for="saleBuyer">Buyer *</label>
+                    <select id="saleBuyer" required><option value="">Loading...</option></select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group-modal">
+                        <label for="saleWarehouse">Warehouse *</label>
+                        <select id="saleWarehouse" required><option value="">Loading...</option></select>
+                    </div>
+                    <div class="form-group-modal">
+                        <label for="saleVariety">Paddy Variety *</label>
+                        <div style="display:flex; gap:8px;">
+                            <select id="saleVariety" required style="flex:1;"><option value="">Loading...</option></select>
+                            <button type="button" id="addVarietyBtn" class="btn-secondary" style="padding:10px 14px;" title="Add new variety">
+                                <i class="fa-solid fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stock & Avg Cost Info -->
+                <div id="stockInfoBox" style="display:none; background:rgba(37,99,235,0.08); border:1px solid rgba(37,99,235,0.2); border-radius:var(--radius-sm); padding:10px 14px; font-size:12px; color:var(--text-primary); margin-bottom:14px;"></div>
+
+                <div class="section-divider">Quantity & Price</div>
+                <div class="form-group-modal">
+                    <label for="saleWeight">Weight (KG) *</label>
+                    <input type="number" id="saleWeight" step="0.01" min="0" required>
+                </div>
+                <div id="weightWarning" style="display:none; color:var(--color-danger); font-size:12px; margin:-8px 0 12px; font-weight:600;"></div>
+
+                <div class="form-group-modal">
+                    <label for="saleSellingPrice">Selling Price Per Maund (৳) *</label>
+                    <input type="number" id="saleSellingPrice" step="0.01" min="0" required>
+                </div>
+
+                <div class="section-divider">Additional Costs</div>
+                <div class="form-row">
+                    <div class="form-group-modal">
+                        <label for="saleTransport">Transport Cost (৳)</label>
+                        <input type="number" id="saleTransport" step="0.01" min="0" value="0">
+                    </div>
+                    <div class="form-group-modal">
+                        <label for="saleLabour">Labour Cost (৳)</label>
+                        <input type="number" id="saleLabour" step="0.01" min="0" value="0">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group-modal">
+                        <label for="saleCommission">Commission (৳)</label>
+                        <input type="number" id="saleCommission" step="0.01" min="0" value="0">
+                    </div>
+                    <div class="form-group-modal">
+                        <label for="saleOther">Other Expenses (৳)</label>
+                        <input type="number" id="saleOther" step="0.01" min="0" value="0">
+                    </div>
+                </div>
+
+                <!-- Live Calculation Preview -->
+                <div class="calc-summary">
+                    <div class="calc-row"><span>Quantity</span><span id="calcMaund">0 Maund</span></div>
+                    <div class="calc-row"><span>Gross Amount</span><span id="calcGross">৳0</span></div>
+                    <div class="calc-row"><span>Cost of Goods</span><span id="calcCost">৳0</span></div>
+                    <div class="calc-row total"><span>Net Amount</span><span id="calcNetAmount">৳0</span></div>
+                    <div class="calc-row" style="font-weight:700;"><span>Net Profit</span><span id="calcProfit">৳0</span></div>
+                    <div class="calc-row"><span>Remaining Due</span><span id="calcDue">৳0</span></div>
+                </div>
+
+                <div class="section-divider">Payment</div>
+                <div class="form-row">
+                    <div class="form-group-modal">
+                        <label for="salePaymentMethod">Payment Method</label>
+                        <select id="salePaymentMethod">
+                            <option value="cash">Cash</option>
+                            <option value="bank">Bank</option>
+                            <option value="mobile_banking">Mobile Banking</option>
+                        </select>
+                    </div>
+                    <div class="form-group-modal">
+                        <label for="salePaymentStatus">Payment Status</label>
+                        <select id="salePaymentStatus">
+                            <option value="due">Due</option>
+                            <option value="partial">Partial</option>
+                            <option value="paid">Paid</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group-modal">
+                    <label for="saleAmountReceived">Amount Received Now (৳)</label>
+                    <input type="number" id="saleAmountReceived" step="0.01" min="0" value="0">
+                </div>
+
+                <div class="form-group-modal">
+                    <label for="saleRemarks">Remarks</label>
+                    <textarea id="saleRemarks" rows="2" placeholder="Optional notes"></textarea>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" id="cancelBtn">Cancel</button>
+                <button type="submit" class="btn-primary" id="submitBtn">Save Sale</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script type="module" src="js/sales.js"></script>
+</body>
+                                                                 </html>
