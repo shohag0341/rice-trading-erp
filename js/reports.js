@@ -105,6 +105,8 @@ async function loadReport() {
 }
 
 // ---------- Purchase Report ----------
+
+
 async function renderPurchaseReport() {
     const data = await getPurchaseReport(currentStartDate, currentEndDate);
 
@@ -143,11 +145,16 @@ async function renderPurchaseReport() {
 
         <div class="data-table-wrapper">
             <table>
-                <thead><tr><th>Invoice</th><th>Date</th><th>Farmer</th><th>Transport</th><th>Labour</th><th>Food</th><th>Other</th><th>Net Cost</th></tr></thead>
+                <thead><tr><th>Invoice</th><th>Date</th><th>Farmer</th><th>Transport</th><th>Labour</th><th>Food</th><th>Other</th><th>Net Cost</th><th>Due</th><th>Action</th></tr></thead>
                 <tbody>
-                    ${data.map(p => `
+                    ${data.map(p => {
+                        const due = Number(p.gross_amount) - Number(p.amount_paid);
+                        return `
                         <tr>
-                            <td><span class="invoice-badge">${p.invoice_no}</span></td>
+                            <td>
+                                <span class="invoice-badge">${p.invoice_no}</span>
+                                ${due > 0 ? '<i class="fa-solid fa-triangle-exclamation" style="color:var(--color-danger); margin-left:6px;" title="Farmer has due"></i>' : ''}
+                            </td>
                             <td>${new Date(p.purchase_date).toLocaleDateString('en-GB')}</td>
                             <td>${p.farmers?.name || '-'}</td>
                             <td>৳${fmt(p.transport_cost)}</td>
@@ -155,13 +162,23 @@ async function renderPurchaseReport() {
                             <td>৳${fmt(p.food_cost)}</td>
                             <td>৳${fmt(p.other_expenses)}</td>
                             <td>৳${fmt(p.net_cost)}</td>
-                        </tr>
-                    `).join('')}
+                            <td style="color:${due > 0 ? 'var(--color-danger)' : 'var(--text-secondary)'}; font-weight:${due > 0 ? '700' : '400'};">৳${fmt(due)}</td>
+                            <td>
+                                ${due > 0 ? `<button class="btn-secondary pay-farmer-btn" data-id="${p.id}" data-farmer-id="${p.farmers?.id}" data-due="${due}" style="padding:6px 12px; font-size:12px;">Pay</button>` : '-'}
+                            </td>
+                        </tr>`;
+                    }).join('')}
                 </tbody>
             </table>
         </div>
     `;
+
+    document.querySelectorAll('.pay-farmer-btn').forEach(btn => {
+        btn.addEventListener('click', () => openPaymentModal('farmer', btn.dataset.id, btn.dataset.farmerId, btn.dataset.due));
+    });
 }
+
+
 
 // ---------- Sales Report ----------
 
