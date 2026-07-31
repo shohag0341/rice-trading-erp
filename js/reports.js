@@ -153,6 +153,7 @@ async function renderPurchaseReport() {
 }
 
 // ---------- Sales Report ----------
+
 async function renderSalesReport() {
     const data = await getSalesReport(currentStartDate, currentEndDate);
 
@@ -161,22 +162,18 @@ async function renderSalesReport() {
     const totalProfit = data.reduce((s, x) => s + Number(x.net_profit), 0);
     const totalGross = data.reduce((s, x) => s + Number(x.gross_amount), 0);
     const totalReceived = data.reduce((s, x) => s + Number(x.amount_received), 0);
+    const totalTransport = data.reduce((s, x) => s + Number(x.transport_cost), 0);
+    const totalLabour = data.reduce((s, x) => s + Number(x.labour_cost), 0);
+    const totalCommission = data.reduce((s, x) => s + Number(x.commission), 0);
+    const totalOther = data.reduce((s, x) => s + Number(x.other_expenses), 0);
 
     summaryGrid.innerHTML = `
         <div class="summary-mini-card"><div class="summary-mini-label">Transactions</div><div class="summary-mini-value">${data.length}</div></div>
         <div class="summary-mini-card"><div class="summary-mini-label">Total Quantity</div><div class="summary-mini-value">${fmt(totalMaund)} Md</div></div>
         <div class="summary-mini-card"><div class="summary-mini-label">Total Sales</div><div class="summary-mini-value">৳${fmt(totalAmount)}</div></div>
-
-
-        
         <div class="summary-mini-card"><div class="summary-mini-label">Total Profit</div><div class="summary-mini-value" style="color:${totalProfit >= 0 ? 'var(--color-accent)' : 'var(--color-danger)'}">৳${fmt(totalProfit)}</div></div>
         <div class="summary-mini-card"><div class="summary-mini-label">Buyer Due</div><div class="summary-mini-value">৳${fmt(totalGross - totalReceived)}</div></div>
     `;
-
-
-
-
-    
 
     if (!data.length) {
         tableContainer.innerHTML = `<div class="table-empty"><i class="fa-solid fa-inbox"></i><div>No sales in this date range.</div></div>`;
@@ -184,17 +181,30 @@ async function renderSalesReport() {
     }
 
     tableContainer.innerHTML = `
+        <div class="card-box" style="margin-bottom:18px;">
+            <div class="card-box-title">Cost Breakdown (Transport / Labour / Commission / Other)</div>
+            <div class="calc-summary">
+                <div class="calc-row"><span>Transport Cost</span><span>৳${fmt(totalTransport)}</span></div>
+                <div class="calc-row"><span>Labour Cost</span><span>৳${fmt(totalLabour)}</span></div>
+                <div class="calc-row"><span>Commission</span><span>৳${fmt(totalCommission)}</span></div>
+                <div class="calc-row"><span>Other Expenses</span><span>৳${fmt(totalOther)}</span></div>
+                <div class="calc-row total"><span>Total Additional Cost</span><span>৳${fmt(totalTransport + totalLabour + totalCommission + totalOther)}</span></div>
+            </div>
+        </div>
+
         <div class="data-table-wrapper">
             <table>
-                <thead><tr><th>Invoice</th><th>Date</th><th>Buyer</th><th>Variety</th><th>Quantity</th><th>Net Amount</th><th>Profit</th></tr></thead>
+                <thead><tr><th>Invoice</th><th>Date</th><th>Buyer</th><th>Transport</th><th>Labour</th><th>Commission</th><th>Other</th><th>Net Amount</th><th>Profit</th></tr></thead>
                 <tbody>
                     ${data.map(s => `
                         <tr>
                             <td><span class="invoice-badge">${s.invoice_no}</span></td>
                             <td>${new Date(s.sale_date).toLocaleDateString('en-GB')}</td>
                             <td>${s.buyers?.name || '-'}</td>
-                            <td>${s.paddy_varieties?.name || '-'}</td>
-                            <td>${fmt(s.maund)} Md</td>
+                            <td>৳${fmt(s.transport_cost)}</td>
+                            <td>৳${fmt(s.labour_cost)}</td>
+                            <td>৳${fmt(s.commission)}</td>
+                            <td>৳${fmt(s.other_expenses)}</td>
                             <td>৳${fmt(s.net_amount)}</td>
                             <td style="color:${s.net_profit >= 0 ? 'var(--color-accent)' : 'var(--color-danger)'}; font-weight:700;">৳${fmt(s.net_profit)}</td>
                         </tr>
@@ -204,6 +214,8 @@ async function renderSalesReport() {
         </div>
     `;
 }
+
+
 
 // ---------- Expense Report ----------
 async function renderExpenseReport() {
