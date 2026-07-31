@@ -59,10 +59,19 @@ function renderTable(buyers) {
 
     tableBody.innerHTML = buyers.map(b => `
         <tr>
+
+
+        
             <td>
-                <span class="table-avatar">${getInitials(b.name)}</span>
-                <strong>${b.name}</strong>
+                <a href="buyer-profile.html?id=${b.id}" style="text-decoration:none; color:inherit;">
+                    <span class="table-avatar">${getInitials(b.name)}</span>
+                    <strong style="color:var(--color-primary);">${b.name}</strong>
+                </a>
             </td>
+
+
+
+            
             <td><span class="badge badge-success">${formatBuyerType(b.buyer_type)}</span></td>
             <td>${b.phone || '-'}</td>
             <td>${b.contact_person || '-'}</td>
