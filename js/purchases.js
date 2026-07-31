@@ -118,10 +118,20 @@ function updateCalculationPreview() {
     
 }
 
-['purchaseWeight', 'purchasePrice', 'purchaseTransport', 'purchaseLabour', 'purchaseFood', 'purchaseOther', 'purchaseAmountPaid']
-    .forEach(id => {
-        document.getElementById(id).addEventListener('input', updateCalculationPreview);
-    });
+// "Full Paid" quick button — fills amount_paid with exactly the gross (farmer's) amount
+document.getElementById('markPaidBtn').addEventListener('click', () => {
+    const weightKg = parseFloat(document.getElementById('purchaseWeight').value) || 0;
+    const pricePerMaund = parseFloat(document.getElementById('purchasePrice').value) || 0;
+    const grossAmount = (weightKg / KG_PER_MAUND) * pricePerMaund;
+
+    if (grossAmount <= 0) {
+        showToast('Enter Weight and Price first.', 'error');
+        return;
+    }
+
+    document.getElementById('purchaseAmountPaid').value = grossAmount.toFixed(2);
+    updateCalculationPreview();
+});
 
 
 // ---------- Load and render purchases table ----------
