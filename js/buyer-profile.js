@@ -1,7 +1,13 @@
 import { initLayout, getCurrentProfile } from './layout.js';
+
+
 import {
-    getBuyerById, getBuyerSalesHistory, getBuyerTotals, recordBuyerPayment
+    getBuyerById, getBuyerSalesHistory, getBuyerTotals, recordBuyerPayment,
+    getBuyerPaymentsList, deleteBuyerPayment
 } from './services/buyer-service.js';
+
+
+
 
 await initLayout('buyers');
 
@@ -33,21 +39,29 @@ function formatBuyerType(type) {
     return map[type] || type;
 }
 
+
+
+
 async function loadProfile() {
     try {
-        const [buyer, totals, history] = await Promise.all([
+        const [buyer, totals, history, payments] = await Promise.all([
             getBuyerById(buyerId),
             getBuyerTotals(buyerId),
-            getBuyerSalesHistory(buyerId)
+            getBuyerSalesHistory(buyerId),
+            getBuyerPaymentsList(buyerId)
         ]);
 
         renderHeader(buyer);
         renderBalanceCards(totals);
         renderSalesHistory(history);
+        renderRecentPayments(payments);
     } catch (err) {
         showToast('Failed to load buyer profile: ' + err.message, 'error');
     }
 }
+
+
+
 
 function renderHeader(buyer) {
     document.getElementById('profileHeader').innerHTML = `
@@ -126,6 +140,95 @@ function renderSalesHistory(history) {
         btn.addEventListener('click', () => openPaymentModal(btn.dataset.id, btn.dataset.due));
     });
 }
+
+
+
+function renderRecentPayments(payments) {
+    const container = document.getElementById('recentPaymentsTable');
+
+    if (!payments.length) {
+        container.innerHTML = `<div class="table-empty"><i class="fa-solid fa-inbox"></i><div>No payments recorded yet.</div></div>`;
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="data-table-wrapper">
+            <table>
+                <thead><tr><th>Date</th><th>Invoice</th><th>Amount</th><th>Method</th><th>Action</th></tr></thead>
+                <tbody>
+                    ${payments.map(p => `
+                        <tr>
+                            <td>${new Date(p.payment_date).toLocaleDateString('en-GB')}</td>
+                            <td><span class="invoice-badge">${p.sales?.invoice_no || '-'}</span></td>
+                            <td>৳${fmt(p.amount)}</td>
+                            <td>${p.payment_method}</td>
+                            <td>
+                                <button class="icon-btn delete delete-payment-btn" data-id="${p.id}" data-sale-id="${p.sale_id}" data-amount="${p.amount}" title="Delete this payment">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    document.querySelectorAll('.delete-payment-btn').forEach(btn => {
+        btn.addEventListener('click', () => handleDeletePayment(btn.dataset.id, btn.dataset.saleId, btn.dataset.amount));
+    });
+}
+
+
+function renderRecentPayments(payments) {
+    const container = document.getElementById('recentPaymentsTable');
+
+    if (!payments.length) {
+        container.innerHTML = `<div class="table-empty"><i class="fa-solid fa-inbox"></i><div>No payments recorded yet.</div></div>`;
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="data-table-wrapper">
+            <table>
+                <thead><tr><th>Date</th><th>Invoice</th><th>Amount</th><th>Method</th><th>Action</th></tr></thead>
+                <tbody>
+                    ${payments.map(p => `
+                        <tr>
+                            <td>${new Date(p.payment_date).toLocaleDateString('en-GB')}</td>
+                            <td><span class="invoice-badge">${p.sales?.invoice_no || '-'}</span></td>
+                            <td>৳${fmt(p.amount)}</td>
+                            <td>${p.payment_method}</td>
+                            <td>
+                                <button class="icon-btn delete delete-payment-btn" data-id="${p.id}" data-sale-id="${p.sale_id}" data-amount="${p.amount}" title="Delete this payment">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    document.querySelectorAll('.delete-payment-btn').forEach(btn => {
+        btn.addEventListener('click', () => handleDeletePayment(btn.dataset.id, btn.dataset.saleId, btn.dataset.amount));
+    });
+}
+
+async function handleDeletePayment(paymentId, saleId, amount) {
+    if (!confirm(`Delete this payment of ৳${fmt(amount)}? The sale's due amount will increase back.`)) return;
+
+    try {
+        await deleteBuyerPayment(paymentId, saleId, amount);
+        showToast('Payment deleted and due restored.');
+        loadProfile();
+    } catch (err) {
+        showToast('Delete failed: ' + err.message, 'error');
+    }
+}
+
+
 
 const paymentModal = document.getElementById('paymentModal');
 let payingSaleId = null;
