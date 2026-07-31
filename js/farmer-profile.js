@@ -1,7 +1,13 @@
 import { initLayout } from './layout.js';
+
+
+
 import {
-    getFarmerById, getFarmerPurchaseHistory, getFarmerTotals, recordFarmerPayment
+    getFarmerById, getFarmerPurchaseHistory, getFarmerTotals, recordFarmerPayment,
+    getFarmerPaymentsList, deleteFarmerPayment
 } from './services/farmer-service.js';
+
+
 import { getCurrentProfile } from './layout.js';
 
 await initLayout('farmers');
@@ -32,22 +38,27 @@ function getInitials(name) {
 
 let purchaseHistory = [];
 
+
+
 async function loadProfile() {
     try {
-        const [farmer, totals, history] = await Promise.all([
+        const [farmer, totals, history, payments] = await Promise.all([
             getFarmerById(farmerId),
             getFarmerTotals(farmerId),
-            getFarmerPurchaseHistory(farmerId)
+            getFarmerPurchaseHistory(farmerId),
+            getFarmerPaymentsList(farmerId)
         ]);
 
         purchaseHistory = history;
         renderHeader(farmer);
         renderBalanceCards(totals);
         renderPurchaseHistory(history);
+        renderRecentPayments(payments);
     } catch (err) {
         showToast('Failed to load farmer profile: ' + err.message, 'error');
     }
 }
+
 
 function renderHeader(farmer) {
     document.getElementById('profileHeader').innerHTML = `
@@ -125,6 +136,56 @@ function renderPurchaseHistory(history) {
     document.querySelectorAll('.pay-btn').forEach(btn => {
         btn.addEventListener('click', () => openPaymentModal(btn.dataset.id, btn.dataset.due));
     });
+}
+
+
+
+function renderRecentPayments(payments) {
+    const container = document.getElementById('recentPaymentsTable');
+
+    if (!payments.length) {
+        container.innerHTML = `<div class="table-empty"><i class="fa-solid fa-inbox"></i><div>No payments recorded yet.</div></div>`;
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="data-table-wrapper">
+            <table>
+                <thead><tr><th>Date</th><th>Invoice</th><th>Amount</th><th>Method</th><th>Action</th></tr></thead>
+                <tbody>
+                    ${payments.map(p => `
+                        <tr>
+                            <td>${new Date(p.payment_date).toLocaleDateString('en-GB')}</td>
+                            <td><span class="invoice-badge">${p.purchases?.invoice_no || '-'}</span></td>
+                            <td>৳${fmt(p.amount)}</td>
+                            <td>${p.payment_method}</td>
+                            <td>
+                                <button class="icon-btn delete delete-payment-btn" data-id="${p.id}" data-purchase-id="${p.purchase_id}" data-amount="${p.amount}" title="Delete this payment">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    document.querySelectorAll('.delete-payment-btn').forEach(btn => {
+        btn.addEventListener('click', () => handleDeletePayment(btn.dataset.id, btn.dataset.purchaseId, btn.dataset.amount));
+    });
+}
+
+async function handleDeletePayment(paymentId, purchaseId, amount) {
+    if (!confirm(`Delete this payment of ৳${fmt(amount)}? The purchase's due amount will increase back.`)) return;
+
+    try {
+        await deleteFarmerPayment(paymentId, purchaseId, amount);
+        showToast('Payment deleted and due restored.');
+        loadProfile();
+    } catch (err) {
+        showToast('Delete failed: ' + err.message, 'error');
+    }
 }
 
 // ---------- Payment Modal ----------
