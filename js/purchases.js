@@ -2,7 +2,7 @@ import { initLayout, getCurrentProfile } from './layout.js';
 import {
     getAllPurchases, createPurchase, updatePurchase, deletePurchase,
     getFarmersForDropdown, getWarehousesForDropdown, getPaddyVarietiesForDropdown,
-    generateInvoiceNumber
+    generateInvoiceNumber, createPaddyVariety
 } from './services/purchase-service.js';
 
 const KG_PER_MAUND = 40;
@@ -56,14 +56,34 @@ async function loadDropdowns() {
     warehouseSelect.innerHTML = '<option value="">Select warehouse</option>' +
         warehousesList.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
 
-    const varietySelect = document.getElementById('purchaseVariety');
-    varietySelect.innerHTML = '<option value="">Select paddy variety</option>' +
-        varietiesList.map(v => `<option value="${v.id}">${v.name}</option>`).join('');
+    renderVarietyOptions();
 
     if (!farmersList.length || !warehousesList.length) {
         showToast('Please add at least one Farmer and one Warehouse before creating a purchase.', 'error');
     }
 }
+
+function renderVarietyOptions(selectedId = '') {
+    const varietySelect = document.getElementById('purchaseVariety');
+    varietySelect.innerHTML = '<option value="">Select paddy variety</option>' +
+        varietiesList.map(v => `<option value="${v.id}">${v.name}</option>`).join('');
+    if (selectedId) varietySelect.value = selectedId;
+}
+
+// ---------- Add new paddy variety on the fly ----------
+document.getElementById('addVarietyBtn').addEventListener('click', async () => {
+    const name = prompt('Enter new paddy variety name:');
+    if (!name || !name.trim()) return;
+
+    try {
+        const newVariety = await createPaddyVariety(name);
+        varietiesList.push(newVariety);
+        renderVarietyOptions(newVariety.id);
+        showToast(`"${newVariety.name}" added successfully.`);
+    } catch (err) {
+        showToast('Failed to add variety: ' + err.message, 'error');
+    }
+});
 
 // ---------- Live calculation preview ----------
 function updateCalculationPreview() {
@@ -276,6 +296,4 @@ modalOverlay.addEventListener('click', (e) => {
 // ---------- Init ----------
 await loadDropdowns();
 loadPurchases();
-
-
-
+    
