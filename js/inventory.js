@@ -1,7 +1,7 @@
 import { initLayout, getCurrentProfile } from './layout.js';
 import {
     getCurrentStockByWarehouse, getStockMovements, getDamagedStock, createDamagedStock,
-    getStockForWarehouseVariety
+    getStockForWarehouseVariety, deleteDamagedStock
 } from './services/inventory-service.js';
 import { getWarehousesForDropdown, getPaddyVarietiesForDropdown } from './services/purchase-service.js';
 
@@ -10,6 +10,7 @@ await initLayout('inventory');
 const fmt = (num) => new Intl.NumberFormat('en-BD', { maximumFractionDigits: 2 }).format(num || 0);
 
 let currentDamageAvailableStock = 0;
+let allDamagedRecords = [];
 
 function showToast(message, type = 'success') {
     const container = document.getElementById('toastContainer');
@@ -115,17 +116,17 @@ async function loadMovements() {
 // ---------- Tab 3: Damaged Stock ----------
 async function loadDamagedStock() {
     const tableBody = document.getElementById('damagedTableBody');
-    tableBody.innerHTML = `<tr><td colspan="6" class="table-empty"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="7" class="table-empty"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</td></tr>`;
 
     try {
-        const damaged = await getDamagedStock();
+        allDamagedRecords = await getDamagedStock();
 
-        if (!damaged.length) {
-            tableBody.innerHTML = `<tr><td colspan="6" class="table-empty">No damaged stock recorded.</td></tr>`;
+        if (!allDamagedRecords.length) {
+            tableBody.innerHTML = `<tr><td colspan="7" class="table-empty">No damaged stock recorded.</td></tr>`;
             return;
         }
 
-        tableBody.innerHTML = damaged.map(d => `
+        tableBody.innerHTML = allDamagedRecords.map(d => `
             <tr>
                 <td>${new Date(d.damage_date).toLocaleDateString('en-GB')}</td>
                 <td>${d.warehouses?.name || '-'}</td>
@@ -133,11 +134,44 @@ async function loadDamagedStock() {
                 <td>${fmt(d.weight_kg)} KG</td>
                 <td>৳${fmt(d.estimated_loss)}</td>
                 <td>${d.reason || '-'}</td>
+                <td>
+                    <div class="action-btns">
+                        <button class="icon-btn delete delete-damage-btn" data-id="${d.id}" title="Delete">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
             </tr>
         `).join('');
+
+        document.querySelectorAll('.delete-damage-btn').forEach(btn => {
+            btn.addEventListener('click', () => handleDeleteDamage(btn.dataset.id));
+        });
     } catch (err) {
         showToast('Failed to load damaged stock: ' + err.message, 'error');
-        tableBody.innerHTML = `<tr><td colspan="6" class="table-empty">Could not load data.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="7" class="table-empty">Could not load data.</td></tr>`;
+    }
+}
+
+async function handleDeleteDamage(damageId) {
+    const record = allDamagedRecords.find(d => d.id === damageId);
+    if (!record) return;
+
+    if (!confirm(`Delete this damage record (${fmt(record.weight_kg)} KG)? This will restore the stock.`)) return;
+
+    try {
+        await deleteDamagedStock(
+            record.id,
+            record.warehouse_id,
+            record.paddy_variety_id,
+            Number(record.weight_kg),
+            record.damage_date
+        );
+        showToast('Damage record deleted and stock restored.');
+        loadDamagedStock();
+        loadCurrentStock();
+    } catch (err) {
+        showToast('Delete failed: ' + err.message, 'error');
     }
 }
 
@@ -258,4 +292,4 @@ damageForm.addEventListener('submit', async (e) => {
 // ---------- Init ----------
 await loadDamageDropdowns();
 loadCurrentStock();
-            
+                             
