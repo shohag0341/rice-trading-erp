@@ -149,13 +149,24 @@ async function renderSalesReport() {
     const totalMaund = data.reduce((s, x) => s + Number(x.maund), 0);
     const totalAmount = data.reduce((s, x) => s + Number(x.net_amount), 0);
     const totalProfit = data.reduce((s, x) => s + Number(x.net_profit), 0);
+    const totalGross = data.reduce((s, x) => s + Number(x.gross_amount), 0);
+    const totalReceived = data.reduce((s, x) => s + Number(x.amount_received), 0);
 
     summaryGrid.innerHTML = `
         <div class="summary-mini-card"><div class="summary-mini-label">Transactions</div><div class="summary-mini-value">${data.length}</div></div>
         <div class="summary-mini-card"><div class="summary-mini-label">Total Quantity</div><div class="summary-mini-value">${fmt(totalMaund)} Md</div></div>
         <div class="summary-mini-card"><div class="summary-mini-label">Total Sales</div><div class="summary-mini-value">৳${fmt(totalAmount)}</div></div>
+
+
+        
         <div class="summary-mini-card"><div class="summary-mini-label">Total Profit</div><div class="summary-mini-value" style="color:${totalProfit >= 0 ? 'var(--color-accent)' : 'var(--color-danger)'}">৳${fmt(totalProfit)}</div></div>
+        <div class="summary-mini-card"><div class="summary-mini-label">Buyer Due</div><div class="summary-mini-value">৳${fmt(totalGross - totalReceived)}</div></div>
     `;
+
+
+
+
+    
 
     if (!data.length) {
         tableContainer.innerHTML = `<div class="table-empty"><i class="fa-solid fa-inbox"></i><div>No sales in this date range.</div></div>`;
