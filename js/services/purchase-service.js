@@ -127,3 +127,18 @@ export async function generateInvoiceNumber() {
     const sequence = String((count || 0) + 1).padStart(3, '0');
     return `PUR-${datePart}-${sequence}`;
 }
+
+
+
+
+
+export async function createPaddyVariety(name) {
+    const { data, error } = await supabase
+        .from('paddy_varieties')
+        .insert([{ name: name.trim() }])
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data;
+}
