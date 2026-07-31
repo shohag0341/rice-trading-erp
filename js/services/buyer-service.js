@@ -135,4 +135,51 @@ export async function recordBuyerPayment(saleId, buyerId, amount, paymentMethod,
 
 
 
+// ---------- Recent payment history + delete/reverse ----------
+export async function getBuyerPaymentsList(buyerId) {
+    const { data, error } = await supabase
+        .from('buyer_payments')
+        .select('*, sales(invoice_no)')
+        .eq('buyer_id', buyerId)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+    if (error) throw error;
+    return data;
+}
+
+export async function deleteBuyerPayment(paymentId, saleId, amount) {
+    // 1. Delete the payment record
+    const { error: deleteError } = await supabase
+        .from('buyer_payments')
+        .delete()
+        .eq('id', paymentId);
+
+    if (deleteError) throw deleteError;
+
+    // 2. Reverse the amount from the sale's amount_received and recalculate status
+    const { data: sale, error: fetchError } = await supabase
+        .from('sales')
+        .select('gross_amount, amount_received')
+        .eq('id', saleId)
+        .single();
+
+    if (fetchError) throw fetchError;
+
+    const newAmountReceived = Math.max(0, Number(sale.amount_received) - Number(amount));
+    const newStatus = newAmountReceived >= Number(sale.gross_amount) ? 'paid'
+        : newAmountReceived > 0 ? 'partial' : 'due';
+
+    const { error: updateError } = await supabase
+        .from('sales')
+        .update({ amount_received: newAmountReceived, payment_status: newStatus })
+        .eq('id', saleId);
+
+    if (updateError) throw updateError;
+}
+
+
+
+
+
 
