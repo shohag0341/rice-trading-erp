@@ -83,4 +83,69 @@ export async function getFarmerPaymentHistory(farmerId) {
 
 
 
+// ---------- Profile page specific functions ----------
 
+export async function getFarmerBalance(farmerId) {
+    const { data, error } = await supabase
+        .from('farmer_outstanding_balance')
+        .select('*')
+        .eq('farmer_id', farmerId)
+        .maybeSingle();
+
+    if (error) throw error;
+    return data || { total_purchased: 0, total_paid: 0, outstanding_balance: 0 };
+}
+
+export async function getFarmerTotals(farmerId) {
+    const { data, error } = await supabase
+        .from('purchases')
+        .select('gross_amount, amount_paid')
+        .eq('farmer_id', farmerId);
+
+    if (error) throw error;
+
+    const totalPurchased = data.reduce((sum, p) => sum + Number(p.gross_amount), 0);
+    const totalPaid = data.reduce((sum, p) => sum + Number(p.amount_paid), 0);
+
+    return {
+        total_purchased: totalPurchased,
+        total_paid: totalPaid,
+        outstanding_balance: totalPurchased - totalPaid,
+        transaction_count: data.length
+    };
+}
+
+export async function recordFarmerPayment(purchaseId, farmerId, amount, paymentMethod, userId) {
+    // 1. Insert the payment record
+    const { error: paymentError } = await supabase
+        .from('farmer_payments')
+        .insert([{
+            purchase_id: purchaseId,
+            farmer_id: farmerId,
+            amount,
+            payment_method: paymentMethod,
+            created_by: userId
+        }]);
+
+    if (paymentError) throw paymentError;
+
+    // 2. Update the purchase's amount_paid and payment_status
+    const { data: purchase, error: fetchError } = await supabase
+        .from('purchases')
+        .select('gross_amount, amount_paid')
+        .eq('id', purchaseId)
+        .single();
+
+    if (fetchError) throw fetchError;
+
+    const newAmountPaid = Number(purchase.amount_paid) + Number(amount);
+    const newStatus = newAmountPaid >= Number(purchase.gross_amount) ? 'paid'
+        : newAmountPaid > 0 ? 'partial' : 'due';
+
+    const { error: updateError } = await supabase
+        .from('purchases')
+        .update({ amount_paid: newAmountPaid, payment_status: newStatus })
+        .eq('id', purchaseId);
+
+    if (updateError) throw updateError;
+}
