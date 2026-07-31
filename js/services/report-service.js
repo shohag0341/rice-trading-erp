@@ -82,3 +82,44 @@ export function getDateRange(rangeType) {
             return { start: format(today), end: format(today) };
     }
 }
+
+
+
+
+// ---------- Combined Cost Report (Purchase + Sales operational costs, kept separate) ----------
+export async function getCombinedCostReport(startDate, endDate) {
+    const [purchases, sales, expenses] = await Promise.all([
+        getPurchaseReport(startDate, endDate),
+        getSalesReport(startDate, endDate),
+        getExpenseReport(startDate, endDate)
+    ]);
+
+    const purchaseCosts = {
+        transport: purchases.reduce((s, p) => s + Number(p.transport_cost), 0),
+        labour: purchases.reduce((s, p) => s + Number(p.labour_cost), 0),
+        food: purchases.reduce((s, p) => s + Number(p.food_cost), 0),
+        other: purchases.reduce((s, p) => s + Number(p.other_expenses), 0),
+    };
+
+    const salesCosts = {
+        transport: sales.reduce((s, x) => s + Number(x.transport_cost), 0),
+        labour: sales.reduce((s, x) => s + Number(x.labour_cost), 0),
+        commission: sales.reduce((s, x) => s + Number(x.commission), 0),
+        other: sales.reduce((s, x) => s + Number(x.other_expenses), 0),
+    };
+
+    const expensesByCategory = {};
+    expenses.forEach(e => {
+        expensesByCategory[e.category] = (expensesByCategory[e.category] || 0) + Number(e.amount);
+    });
+
+    const totalPurchaseCost = purchaseCosts.transport + purchaseCosts.labour + purchaseCosts.food + purchaseCosts.other;
+    const totalSalesCost = salesCosts.transport + salesCosts.labour + salesCosts.commission + salesCosts.other;
+    const totalOperatingExpense = expenses.reduce((s, e) => s + Number(e.amount), 0);
+    const grandTotal = totalPurchaseCost + totalSalesCost + totalOperatingExpense;
+
+    return {
+        purchaseCosts, salesCosts, expensesByCategory,
+        totalPurchaseCost, totalSalesCost, totalOperatingExpense, grandTotal
+    };
+}
