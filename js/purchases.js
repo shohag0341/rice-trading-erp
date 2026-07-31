@@ -5,7 +5,7 @@ import {
     generateInvoiceNumber
 } from './services/purchase-service.js';
 
-const KG_PER_MAUND = 37.32;
+const KG_PER_MAUND = 40;
 
 await initLayout('purchases');
 
