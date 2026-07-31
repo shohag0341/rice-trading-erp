@@ -97,21 +97,19 @@ async function loadReport() {
 async function renderPurchaseReport() {
     const data = await getPurchaseReport(currentStartDate, currentEndDate);
 
-    const totalWeight = data.reduce((s, p) => s + Number(p.weight_kg), 0);
     const totalMaund = data.reduce((s, p) => s + Number(p.maund), 0);
-
-
-
-    
     const totalCost = data.reduce((s, p) => s + Number(p.net_cost), 0);
     const totalGross = data.reduce((s, p) => s + Number(p.gross_amount), 0);
     const totalPaid = data.reduce((s, p) => s + Number(p.amount_paid), 0);
+    const totalTransport = data.reduce((s, p) => s + Number(p.transport_cost), 0);
+    const totalLabour = data.reduce((s, p) => s + Number(p.labour_cost), 0);
+    const totalFood = data.reduce((s, p) => s + Number(p.food_cost), 0);
+    const totalOther = data.reduce((s, p) => s + Number(p.other_expenses), 0);
 
     summaryGrid.innerHTML = `
         <div class="summary-mini-card"><div class="summary-mini-label">Transactions</div><div class="summary-mini-value">${data.length}</div></div>
         <div class="summary-mini-card"><div class="summary-mini-label">Total Quantity</div><div class="summary-mini-value">${fmt(totalMaund)} Md</div></div>
         <div class="summary-mini-card"><div class="summary-mini-label">Total Cost</div><div class="summary-mini-value">৳${fmt(totalCost)}</div></div>
-
         <div class="summary-mini-card"><div class="summary-mini-label">Farmer Due</div><div class="summary-mini-value">৳${fmt(totalGross - totalPaid)}</div></div>
     `;
 
@@ -121,19 +119,31 @@ async function renderPurchaseReport() {
     }
 
     tableContainer.innerHTML = `
+        <div class="card-box" style="margin-bottom:18px;">
+            <div class="card-box-title">Cost Breakdown (Transport / Labour / Food / Other)</div>
+            <div class="calc-summary">
+                <div class="calc-row"><span>Transport Cost</span><span>৳${fmt(totalTransport)}</span></div>
+                <div class="calc-row"><span>Labour Cost</span><span>৳${fmt(totalLabour)}</span></div>
+                <div class="calc-row"><span>Food Cost</span><span>৳${fmt(totalFood)}</span></div>
+                <div class="calc-row"><span>Other Expenses</span><span>৳${fmt(totalOther)}</span></div>
+                <div class="calc-row total"><span>Total Additional Cost</span><span>৳${fmt(totalTransport + totalLabour + totalFood + totalOther)}</span></div>
+            </div>
+        </div>
+
         <div class="data-table-wrapper">
             <table>
-                <thead><tr><th>Invoice</th><th>Date</th><th>Farmer</th><th>Variety</th><th>Quantity</th><th>Net Cost</th><th>Status</th></tr></thead>
+                <thead><tr><th>Invoice</th><th>Date</th><th>Farmer</th><th>Transport</th><th>Labour</th><th>Food</th><th>Other</th><th>Net Cost</th></tr></thead>
                 <tbody>
                     ${data.map(p => `
                         <tr>
                             <td><span class="invoice-badge">${p.invoice_no}</span></td>
                             <td>${new Date(p.purchase_date).toLocaleDateString('en-GB')}</td>
                             <td>${p.farmers?.name || '-'}</td>
-                            <td>${p.paddy_varieties?.name || '-'}</td>
-                            <td>${fmt(p.maund)} Md</td>
+                            <td>৳${fmt(p.transport_cost)}</td>
+                            <td>৳${fmt(p.labour_cost)}</td>
+                            <td>৳${fmt(p.food_cost)}</td>
+                            <td>৳${fmt(p.other_expenses)}</td>
                             <td>৳${fmt(p.net_cost)}</td>
-                            <td><span class="badge ${p.payment_status === 'paid' ? 'payment-badge-paid' : p.payment_status === 'partial' ? 'payment-badge-partial' : 'payment-badge-due'}">${p.payment_status}</span></td>
                         </tr>
                     `).join('')}
                 </tbody>
