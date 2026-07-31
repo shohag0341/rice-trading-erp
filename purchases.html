@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Purchases - Rice Trading ERP Pro</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<link rel="stylesheet" href="css/variables.css">
+<link rel="stylesheet" href="css/main.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/farmers.css">
+<link rel="stylesheet" href="css/purchases.css">
+</head>
+<body>
+
+<div class="app-shell">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="main-content">
+        <header class="top-header" id="topHeader"></header>
+
+        <main class="page-content">
+            <div class="toolbar">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="searchInput" placeholder="Search by invoice number...">
+                </div>
+                <button class="btn-primary" id="addPurchaseBtn">
+                    <i class="fa-solid fa-plus"></i> New Purchase
+                </button>
+            </div>
+
+            <div class="data-table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Invoice</th>
+                            <th>Date</th>
+                            <th>Farmer</th>
+                            <th>Variety</th>
+                            <th>Quantity</th>
+                            <th>Net Cost</th>
+                            <th>Payment</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="purchasesTableBody">
+                        <tr><td colspan="8" class="table-empty">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Add/Edit Purchase Modal -->
+<div class="modal-overlay" id="purchaseModal">
+    <div class="modal-box modal-box-lg">
+        <div class="modal-header">
+            <h3 id="modalTitle">New Purchase</h3>
+            <button class="modal-close" id="modalCloseBtn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <form id="purchaseForm">
+            <div class="modal-body">
+
+                <div class="section-divider">Basic Info</div>
+                <div class="form-row">
+                    <div class="form-group-modal">
+                        <label for="purchaseInvoiceNo">Invoice No *</label>
+                        <input type="text" id="purchaseInvoiceNo" required>
+                    </div>
+                    <div class="form-group-modal">
+                        <label for="purchaseDate">Purchase Date *</label>
+                        <input type="date" id="purchaseDate" required>
+                    </div>
+                </div>
+
+                <div class="form-group-modal">
+                    <label for="purchaseFarmer">Farmer *</label>
+                    <select id="purchaseFarmer" required><option value="">Loading...</option></select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group-modal">
+                        <label for="purchaseWarehouse">Warehouse *</label>
+                        <select id="purchaseWarehouse" required><option value="">Loading...</option></select>
+                    </div>
+                    <div class="form-group-modal">
+                        <label for="purchaseVariety">Paddy Variety *</label>
+                        <select id="purchaseVariety" required><option value="">Loading...</option></select>
+                    </div>
+                </div>
+
+                <div class="section-divider">Quantity & Price</div>
+                <div class="form-row">
+                    <div class="form-group-modal">
+                        <label for="purchaseWeight">Weight (KG) *</label>
+                        <input type="number" id="purchaseWeight" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group-modal">
+                        <label for="purchaseMoisture">Moisture (%)</label>
+                        <input type="number" id="purchaseMoisture" step="0.01" min="0" max="100">
+                    </div>
+                </div>
+
+                <div class="form-group-modal">
+                    <label for="purchasePrice">Price Per Maund (৳) *</label>
+                    <input type="number" id="purchasePrice" step="0.01" min="0" required>
+                </div>
+
+                <div class="section-divider">Additional Costs</div>
+                <div class="form-row">
+                    <div class="form-group-modal">
+                        <label for="purchaseTransport">Transport Cost (৳)</label>
+                        <input type="number" id="purchaseTransport" step="0.01" min="0" value="0">
+                    </div>
+                    <div class="form-group-modal">
+                        <label for="purchaseLabour">Labour Cost (৳)</label>
+                        <input type="number" id="purchaseLabour" step="0.01" min="0" value="0">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group-modal">
+                        <label for="purchaseFood">Food Cost (৳)</label>
+                        <input type="number" id="purchaseFood" step="0.01" min="0" value="0">
+                    </div>
+                    <div class="form-group-modal">
+                        <label for="purchaseOther">Other Expenses (৳)</label>
+                        <input type="number" id="purchaseOther" step="0.01" min="0" value="0">
+                    </div>
+                </div>
+
+                <!-- Live Calculation Preview -->
+                <div class="calc-summary">
+                    <div class="calc-row"><span>Quantity</span><span id="calcMaund">0 Maund</span></div>
+                    <div class="calc-row"><span>Gross Amount</span><span id="calcGross">৳0</span></div>
+                    <div class="calc-row total"><span>Net Cost</span><span id="calcNetCost">৳0</span></div>
+                    <div class="calc-row"><span>Remaining Due</span><span id="calcDue">৳0</span></div>
+                </div>
+
+                <div class="section-divider">Payment</div>
+                <div class="form-row">
+                    <div class="form-group-modal">
+                        <label for="purchasePaymentMethod">Payment Method</label>
+                        <select id="purchasePaymentMethod">
+                            <option value="cash">Cash</option>
+                            <option value="bank">Bank</option>
+                            <option value="mobile_banking">Mobile Banking</option>
+                        </select>
+                    </div>
+                    <div class="form-group-modal">
+                        <label for="purchasePaymentStatus">Payment Status</label>
+                        <select id="purchasePaymentStatus">
+                            <option value="due">Due</option>
+                            <option value="partial">Partial</option>
+                            <option value="paid">Paid</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group-modal">
+                    <label for="purchaseAmountPaid">Amount Paid Now (৳)</label>
+                    <input type="number" id="purchaseAmountPaid" step="0.01" min="0" value="0">
+                </div>
+
+                <div class="form-group-modal">
+                    <label for="purchaseRemarks">Remarks</label>
+                    <textarea id="purchaseRemarks" rows="2" placeholder="Optional notes"></textarea>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" id="cancelBtn">Cancel</button>
+                <button type="submit" class="btn-primary" id="submitBtn">Save Purchase</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script type="module" src="js/purchases.js"></script>
+</body>
+  </html>
