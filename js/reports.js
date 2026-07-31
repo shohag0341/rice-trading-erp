@@ -1,11 +1,10 @@
-import { initLayout } from './layout.js';
-
-
+import { initLayout, getCurrentProfile } from './layout.js';
 import {
     getPurchaseReport, getSalesReport, getExpenseReport, getProfitReport, getDateRange,
     getCombinedCostReport
 } from './services/report-service.js';
-
+import { recordFarmerPayment } from './services/farmer-service.js';
+import { recordBuyerPayment } from './services/buyer-service.js';
 
 
 await initLayout('reports');
@@ -192,6 +191,10 @@ async function renderSalesReport() {
         return;
     }
 
+
+
+
+    
     tableContainer.innerHTML = `
         <div class="card-box" style="margin-bottom:18px;">
             <div class="card-box-title">Cost Breakdown (Transport / Labour / Commission / Other)</div>
@@ -206,26 +209,38 @@ async function renderSalesReport() {
 
         <div class="data-table-wrapper">
             <table>
-                <thead><tr><th>Invoice</th><th>Date</th><th>Buyer</th><th>Transport</th><th>Labour</th><th>Commission</th><th>Other</th><th>Net Amount</th><th>Profit</th></tr></thead>
+                <thead><tr><th>Invoice</th><th>Date</th><th>Buyer</th><th>Net Amount</th><th>Profit</th><th>Due</th><th>Action</th></tr></thead>
                 <tbody>
-                    ${data.map(s => `
+                    ${data.map(s => {
+                        const due = Number(s.gross_amount) - Number(s.amount_received);
+                        return `
                         <tr>
-                            <td><span class="invoice-badge">${s.invoice_no}</span></td>
+                            <td>
+                                <span class="invoice-badge">${s.invoice_no}</span>
+                                ${due > 0 ? '<i class="fa-solid fa-triangle-exclamation" style="color:var(--color-danger); margin-left:6px;" title="Buyer owes payment"></i>' : ''}
+                            </td>
                             <td>${new Date(s.sale_date).toLocaleDateString('en-GB')}</td>
                             <td>${s.buyers?.name || '-'}</td>
-                            <td>৳${fmt(s.transport_cost)}</td>
-                            <td>৳${fmt(s.labour_cost)}</td>
-                            <td>৳${fmt(s.commission)}</td>
-                            <td>৳${fmt(s.other_expenses)}</td>
                             <td>৳${fmt(s.net_amount)}</td>
                             <td style="color:${s.net_profit >= 0 ? 'var(--color-accent)' : 'var(--color-danger)'}; font-weight:700;">৳${fmt(s.net_profit)}</td>
-                        </tr>
-                    `).join('')}
+                            <td style="color:${due > 0 ? 'var(--color-danger)' : 'var(--text-secondary)'}; font-weight:${due > 0 ? '700' : '400'};">৳${fmt(due)}</td>
+                            <td>
+                                ${due > 0 ? `<button class="btn-secondary pay-buyer-btn" data-id="${s.id}" data-buyer-id="${s.buyers?.id}" data-due="${due}" style="padding:6px 12px; font-size:12px;">Collect</button>` : '-'}
+                            </td>
+                        </tr>`;
+                    }).join('')}
                 </tbody>
             </table>
         </div>
     `;
+
+    document.querySelectorAll('.pay-buyer-btn').forEach(btn => {
+        btn.addEventListener('click', () => openPaymentModal('buyer', btn.dataset.id, btn.dataset.buyerId, btn.dataset.due));
+    });
 }
+
+
+
 
 
 
@@ -344,5 +359,67 @@ async function renderCostAnalysisReport() {
 
 
 
+// ---------- Payment Modal (shared for Farmer & Buyer) ----------
+const paymentModal = document.getElementById('paymentModal');
+let payingType = null;
+let payingRecordId = null;
+let payingPartyId = null;
+
+function openPaymentModal(type, recordId, partyId, due) {
+    payingType = type;
+    payingRecordId = recordId;
+    payingPartyId = partyId;
+
+    document.getElementById('paymentModalTitle').textContent = type === 'farmer' ? 'Pay Farmer' : 'Collect from Buyer';
+    document.getElementById('paymentDueAmount').textContent = `৳${fmt(due)}`;
+    document.getElementById('paymentAmount').value = due;
+    document.getElementById('paymentAmount').max = due;
+    paymentModal.classList.add('open');
+}
+
+document.getElementById('paymentModalClose').addEventListener('click', () => paymentModal.classList.remove('open'));
+document.getElementById('paymentCancelBtn').addEventListener('click', () => paymentModal.classList.remove('open'));
+paymentModal.addEventListener('click', (e) => { if (e.target === paymentModal) paymentModal.classList.remove('open'); });
+
+document.getElementById('paymentForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const amount = parseFloat(document.getElementById('paymentAmount').value);
+    const method = document.getElementById('paymentMethodSelect').value;
+
+    if (!amount || amount <= 0) {
+        showToast('Enter a valid payment amount.', 'error');
+        return;
+    }
+
+    const submitBtn = document.getElementById('paymentSubmitBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner"></span> Processing...';
+
+    try {
+        const profile = getCurrentProfile();
+
+        if (payingType === 'farmer') {
+            await recordFarmerPayment(payingRecordId, payingPartyId, amount, method, profile?.id);
+            showToast('Payment recorded successfully.');
+        } else {
+            await recordBuyerPayment(payingRecordId, payingPartyId, amount, method, profile?.id);
+            showToast('Payment collected successfully.');
+        }
+
+        paymentModal.classList.remove('open');
+        loadReport();
+    } catch (err) {
+        showToast('Payment failed: ' + err.message, 'error');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Record Payment';
+    }
+});
+
 // ---------- Init: default to "This Month" ----------
 document.querySelector('.quick-range-btn[data-range="month"]').click();
+
+
+
+
