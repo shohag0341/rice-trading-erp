@@ -54,10 +54,17 @@ function renderTable(farmers) {
 
     tableBody.innerHTML = farmers.map(f => `
         <tr>
+
+        
             <td>
-                <span class="table-avatar">${getInitials(f.name)}</span>
-                <strong>${f.name}</strong>
+                <a href="farmer-profile.html?id=${f.id}" style="text-decoration:none; color:inherit;">
+                    <span class="table-avatar">${getInitials(f.name)}</span>
+                    <strong style="color:var(--color-primary);">${f.name}</strong>
+                </a>
             </td>
+
+
+            
             <td>${f.phone || '-'}</td>
             <td>${f.village || '-'}</td>
             <td>${f.district || '-'}</td>
