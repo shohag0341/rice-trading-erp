@@ -93,11 +93,23 @@
                         <label for="purchaseWarehouse">Warehouse *</label>
                         <select id="purchaseWarehouse" required><option value="">Loading...</option></select>
                     </div>
+
+
+
+                    
                     <div class="form-group-modal">
-                        <label for="purchaseVariety">Paddy Variety *</label>
-                        <select id="purchaseVariety" required><option value="">Loading...</option></select>
+    <label for="purchaseVariety">Paddy Variety *</label>
+    <div style="display:flex; gap:8px;">
+        <select id="purchaseVariety" required style="flex:1;"><option value="">Loading...</option></select>
+        <button type="button" id="addVarietyBtn" class="btn-secondary" style="padding:10px 14px;" title="Add new variety">
+            <i class="fa-solid fa-plus"></i>
+        </button>
+    </div>
                     </div>
-                </div>
+
+
+
+                
 
                 <div class="section-divider">Quantity & Price</div>
                 <div class="form-row">
