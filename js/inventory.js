@@ -1,12 +1,15 @@
 import { initLayout, getCurrentProfile } from './layout.js';
 import {
-    getCurrentStockByWarehouse, getStockMovements, getDamagedStock, createDamagedStock
+    getCurrentStockByWarehouse, getStockMovements, getDamagedStock, createDamagedStock,
+    getStockForWarehouseVariety
 } from './services/inventory-service.js';
 import { getWarehousesForDropdown, getPaddyVarietiesForDropdown } from './services/purchase-service.js';
 
 await initLayout('inventory');
 
 const fmt = (num) => new Intl.NumberFormat('en-BD', { maximumFractionDigits: 2 }).format(num || 0);
+
+let currentDamageAvailableStock = 0;
 
 function showToast(message, type = 'success') {
     const container = document.getElementById('toastContainer');
@@ -158,12 +161,58 @@ async function loadDamageDropdowns() {
 document.getElementById('addDamageBtn').addEventListener('click', () => {
     damageForm.reset();
     document.getElementById('damageDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('damageStockInfoBox').style.display = 'none';
+    document.getElementById('damageWeightWarning').style.display = 'none';
+    currentDamageAvailableStock = 0;
     damageModal.classList.add('open');
 });
 
 document.getElementById('damageModalClose').addEventListener('click', () => damageModal.classList.remove('open'));
 document.getElementById('damageCancelBtn').addEventListener('click', () => damageModal.classList.remove('open'));
 damageModal.addEventListener('click', (e) => { if (e.target === damageModal) damageModal.classList.remove('open'); });
+
+async function refreshDamageStockInfo() {
+    const warehouseId = document.getElementById('damageWarehouse').value;
+    const varietyId = document.getElementById('damageVariety').value;
+    const infoBox = document.getElementById('damageStockInfoBox');
+
+    if (!warehouseId || !varietyId) {
+        infoBox.style.display = 'none';
+        currentDamageAvailableStock = 0;
+        return;
+    }
+
+    infoBox.style.display = 'block';
+    infoBox.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Checking stock...`;
+
+    try {
+        const stock = await getStockForWarehouseVariety(warehouseId, varietyId);
+        currentDamageAvailableStock = Number(stock.current_weight_kg || 0);
+
+        const color = currentDamageAvailableStock <= 0 ? 'var(--color-danger)' : 'var(--text-primary)';
+        infoBox.innerHTML = `<i class="fa-solid fa-boxes-stacked"></i> Available in warehouse: <strong style="color:${color};">${fmt(currentDamageAvailableStock)} KG</strong>`;
+
+        validateDamageWeight();
+    } catch (err) {
+        infoBox.innerHTML = 'Could not check stock.';
+    }
+}
+
+function validateDamageWeight() {
+    const weight = parseFloat(document.getElementById('damageWeight').value) || 0;
+    const warningBox = document.getElementById('damageWeightWarning');
+
+    if (weight > currentDamageAvailableStock) {
+        warningBox.style.display = 'block';
+        warningBox.textContent = `Cannot record ${fmt(weight)} KG damage — only ${fmt(currentDamageAvailableStock)} KG available in this warehouse for this variety.`;
+    } else {
+        warningBox.style.display = 'none';
+    }
+}
+
+document.getElementById('damageWarehouse').addEventListener('change', refreshDamageStockInfo);
+document.getElementById('damageVariety').addEventListener('change', refreshDamageStockInfo);
+document.getElementById('damageWeight').addEventListener('input', validateDamageWeight);
 
 damageForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -179,6 +228,11 @@ damageForm.addEventListener('submit', async (e) => {
 
     if (!damageData.warehouse_id || !damageData.paddy_variety_id || damageData.weight_kg <= 0) {
         showToast('Please fill Warehouse, Variety, and Weight.', 'error');
+        return;
+    }
+
+    if (damageData.weight_kg > currentDamageAvailableStock) {
+        showToast(`Cannot record damage: only ${fmt(currentDamageAvailableStock)} KG available in stock for this warehouse/variety.`, 'error');
         return;
     }
 
@@ -204,3 +258,4 @@ damageForm.addEventListener('submit', async (e) => {
 // ---------- Init ----------
 await loadDamageDropdowns();
 loadCurrentStock();
+            
