@@ -1,0 +1,56 @@
+.inventory-summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.stock-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 18px;
+    box-shadow: var(--shadow-sm);
+}
+
+.stock-card-warehouse {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.stock-card-total {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--color-primary);
+}
+
+.stock-card-sub { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+
+.variety-breakdown {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-color);
+}
+
+.variety-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    padding: 4px 0;
+    color: var(--text-secondary);
+}
+
+.variety-row strong { color: var(--text-primary); }
+
+.movement-type-badge {
+    padding: 3px 9px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.movement-in { background: rgba(22,163,74,0.12); color: var(--color-accent); }
+.movement-out { background: rgba(220,38,38,0.12); color: var(--color-danger); }
+.movement-neutral { background: rgba(249,115,22,0.12); color: var(--color-warning); }
