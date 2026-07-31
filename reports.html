@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reports - Rice Trading ERP Pro</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<link rel="stylesheet" href="css/variables.css">
+<link rel="stylesheet" href="css/main.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/farmers.css">
+<link rel="stylesheet" href="css/purchases.css">
+<link rel="stylesheet" href="css/dashboard.css">
+<link rel="stylesheet" href="css/reports.css">
+</head>
+<body>
+
+<div class="app-shell">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="main-content">
+        <header class="top-header" id="topHeader"></header>
+
+        <main class="page-content">
+            <div class="report-filters">
+                <div class="filter-group">
+                    <label>Report Type</label>
+                    <select id="reportType">
+                        <option value="purchase">Purchase Report</option>
+                        <option value="sales">Sales Report</option>
+                        <option value="expense">Expense Report</option>
+                        <option value="profit">Profit & Loss</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label>Quick Range</label>
+                    <div class="quick-range-btns">
+                        <button type="button" class="quick-range-btn" data-range="today">Today</button>
+                        <button type="button" class="quick-range-btn" data-range="week">This Week</button>
+                        <button type="button" class="quick-range-btn active" data-range="month">This Month</button>
+                        <button type="button" class="quick-range-btn" data-range="year">This Year</button>
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <label>Start Date</label>
+                    <input type="date" id="startDate">
+                </div>
+
+                <div class="filter-group">
+                    <label>End Date</label>
+                    <input type="date" id="endDate">
+                </div>
+
+                <button class="btn-print" id="printBtn">
+                    <i class="fa-solid fa-print"></i> Print
+                </button>
+            </div>
+
+            <div class="report-summary-grid" id="summaryGrid"></div>
+
+            <div id="reportTableContainer"></div>
+        </main>
+    </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script type="module" src="js/reports.js"></script>
+</body>
+</html>
