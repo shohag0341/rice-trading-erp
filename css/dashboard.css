@@ -97,3 +97,10 @@
 @media (max-width: 992px) {
     .charts-grid, .bottom-grid { grid-template-columns: 1fr; }
 }
+
+
+
+
+.stat-card:active {
+    transform: scale(0.98);
+}
