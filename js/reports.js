@@ -312,6 +312,24 @@ async function renderProfitReport() {
         <div class="summary-mini-card"><div class="summary-mini-label">Net Profit</div><div class="summary-mini-value" style="color:${report.netProfit >= 0 ? 'var(--color-accent)' : 'var(--color-danger)'}">৳${fmt(report.netProfit)}</div></div>
     `;
 
+    // Build per-invoice profit/loss rows from the sales already fetched for this period
+    const sortedSales = [...report.sales].sort((a, b) => new Date(b.sale_date) - new Date(a.sale_date));
+    const invoiceRows = sortedSales.map(s => {
+        const revenue = Number(s.net_amount);
+        const cost = Number(s.maund) * Number(s.avg_cost_per_maund);
+        const profit = revenue - cost;
+        const profitColor = profit >= 0 ? 'var(--color-accent)' : 'var(--color-danger)';
+        return `
+            <tr>
+                <td><span class="invoice-badge">${s.invoice_no}</span></td>
+                <td>${new Date(s.sale_date).toLocaleDateString('en-GB')}</td>
+                <td>${s.buyers?.name || '-'}</td>
+                <td>৳${fmt(revenue)}</td>
+                <td>৳${fmt(cost)}</td>
+                <td style="color:${profitColor}; font-weight:700;">৳${fmt(profit)}</td>
+            </tr>`;
+    }).join('');
+
     tableContainer.innerHTML = `
         <div class="card-box">
             <div class="card-box-title">Profit & Loss Statement</div>
@@ -321,6 +339,27 @@ async function renderProfitReport() {
                 <div class="calc-row total"><span>Gross Profit</span><span>৳${fmt(report.grossProfit)}</span></div>
                 <div class="calc-row"><span>Operating Expenses</span><span>- ৳${fmt(report.totalExpenses)}</span></div>
                 <div class="calc-row total" style="color:${report.netProfit >= 0 ? 'var(--color-accent)' : 'var(--color-danger)'}"><span>Net Profit</span><span>৳${fmt(report.netProfit)}</span></div>
+            </div>
+        </div>
+
+        <div class="card-box" style="margin-top:18px;">
+            <div class="card-box-title">Invoice-wise Profit / Loss</div>
+            <div class="data-table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Invoice</th>
+                            <th>Date</th>
+                            <th>Buyer</th>
+                            <th>Revenue</th>
+                            <th>Cost</th>
+                            <th>Profit / Loss</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${invoiceRows || `<tr><td colspan="6" class="table-empty">No sales in this period.</td></tr>`}
+                    </tbody>
+                </table>
             </div>
         </div>
     `;
