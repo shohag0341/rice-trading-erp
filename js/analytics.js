@@ -1,8 +1,14 @@
 import { initLayout } from './layout.js';
+
+
+
 import {
     getAnalyticsSummary, getBestVillage, getBestFarmer, getBestBuyer, getBestVariety,
-    getTopVillages, getTopVarieties
+    getTopVillages, getTopVarieties, getVarietyBreakdown
 } from './services/analytics-service.js';
+
+
+
 import { getDateRange } from './services/report-service.js';
 
 await initLayout('analytics');
@@ -80,7 +86,61 @@ async function loadSummary() {
         showToast('Failed to load summary: ' + err.message, 'error');
         grid.innerHTML = '';
     }
+
+    loadVarietyBreakdown();
 }
+
+// ---------- Variety-wise breakdown (changes with date range) ----------
+async function loadVarietyBreakdown() {
+    const container = document.getElementById('varietyBreakdownTable');
+    container.innerHTML = `<div class="table-empty"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>`;
+
+    try {
+        const breakdown = await getVarietyBreakdown(currentStartDate, currentEndDate);
+
+        if (!breakdown.length) {
+            container.innerHTML = `<div class="table-empty">No purchase/sales activity in this period.</div>`;
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="data-table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Variety</th>
+                            <th>Purchased (Md)</th>
+                            <th>Avg Purchase Price</th>
+                            <th>Sold (Md)</th>
+                            <th>Avg Selling Price</th>
+                            <th>Profit/Maund</th>
+                            <th>Total Profit</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${breakdown.map(b => `
+                            <tr>
+                                <td><strong>${b.variety_name}</strong></td>
+                                <td>${fmt(b.purchaseMaund)}</td>
+                                <td>${b.avgPurchasePrice > 0 ? '৳' + fmt(b.avgPurchasePrice) : '-'}</td>
+                                <td>${fmt(b.salesMaund)}</td>
+                                <td>${b.avgSellingPrice > 0 ? '৳' + fmt(b.avgSellingPrice) : '-'}</td>
+                                <td style="color:${b.profitPerMaund >= 0 ? 'var(--color-accent)' : 'var(--color-danger)'};">${b.salesMaund > 0 ? '৳' + fmt(b.profitPerMaund) : '-'}</td>
+                                <td style="font-weight:700; color:${b.totalProfit >= 0 ? 'var(--color-accent)' : 'var(--color-danger)'};">${b.salesMaund > 0 ? '৳' + fmt(b.totalProfit) : '-'}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    } catch (err) {
+        showToast('Failed to load variety breakdown: ' + err.message, 'error');
+        container.innerHTML = `<div class="table-empty">Could not load data.</div>`;
+    }
+}
+
+
+
 
 // ---------- All-time bests ----------
 async function loadBests() {
