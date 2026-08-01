@@ -17,8 +17,12 @@ const NAV_ITEMS = [
     { section: 'Insights' },
     { icon: 'fa-file-lines', label: 'Reports', href: 'reports.html', page: 'reports' },
     { icon: 'fa-magnifying-glass-chart', label: 'Analytics', href: 'analytics.html', page: 'analytics' },
+    
+    
     { section: 'System' },
+    { icon: 'fa-money-bill-transfer', label: 'Cash Adjustments', href: 'cash-adjustments.html', page: 'cash-adjustments' },
     { icon: 'fa-gear', label: 'Settings', href: 'settings.html', page: 'settings' },
+    
 ];
 
 let currentProfile = null;
