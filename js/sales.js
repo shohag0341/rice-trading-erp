@@ -194,22 +194,26 @@ function updateCalculationPreview() {
         document.getElementById(id).addEventListener('input', updateCalculationPreview);
     });
 
+
+
+
+
 // ---------- Load and render sales table ----------
 async function loadSales(searchTerm = '') {
-    tableBody.innerHTML = `<tr><td colspan="8" class="table-empty"><i class="fa-solid fa-spinner fa-spin"></i><div>Loading sales...</div></td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="9" class="table-empty"><i class="fa-solid fa-spinner fa-spin"></i><div>Loading sales...</div></td></tr>`;
     try {
         allSales = await getAllSales(searchTerm);
         renderTable(allSales);
     } catch (err) {
         showToast('Failed to load sales: ' + err.message, 'error');
-        tableBody.innerHTML = `<tr><td colspan="8" class="table-empty">Could not load data.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="9" class="table-empty">Could not load data.</td></tr>`;
     }
 }
 
 function renderTable(sales) {
     if (!sales.length) {
         tableBody.innerHTML = `
-            <tr><td colspan="8">
+            <tr><td colspan="9">
                 <div class="table-empty">
                     <i class="fa-solid fa-money-bill-trend-up"></i>
                     <div>No sales found. Click "New Sale" to record your first one.</div>
@@ -229,6 +233,7 @@ function renderTable(sales) {
             <td>${fmt(s.maund)} Md</td>
             <td>৳${fmt(s.net_amount)}</td>
             <td style="color:${profitColor}; font-weight:700;">৳${fmt(s.net_profit)}</td>
+            <td><span class="badge ${paymentBadgeClass(s.payment_status)}">${s.payment_status}</span></td>
             <td>
                 <div class="action-btns">
                     <button class="icon-btn edit-btn" data-id="${s.id}" title="Edit"><i class="fa-solid fa-pen"></i></button>
@@ -240,7 +245,11 @@ function renderTable(sales) {
 
     document.querySelectorAll('.edit-btn').forEach(btn => btn.addEventListener('click', () => openEditModal(btn.dataset.id)));
     document.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', () => handleDelete(btn.dataset.id)));
-}
+                                                                                 }
+
+
+
+
 
 // ---------- Modal open/close ----------
 async function openAddModal() {
