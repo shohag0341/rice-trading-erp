@@ -118,6 +118,14 @@ function updateCalculationPreview() {
     
 }
 
+
+
+['purchaseWeight', 'purchasePrice', 'purchaseTransport', 'purchaseLabour', 'purchaseFood', 'purchaseOther', 'purchaseAmountPaid']
+    .forEach(id => {
+        document.getElementById(id).addEventListener('input', updateCalculationPreview);
+    });
+
+
 // "Full Paid" quick button — fills amount_paid with exactly the gross (farmer's) amount
 document.getElementById('markPaidBtn').addEventListener('click', () => {
     const weightKg = parseFloat(document.getElementById('purchaseWeight').value) || 0;
