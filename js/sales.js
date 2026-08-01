@@ -145,10 +145,15 @@ function updateCalculationPreview() {
 
     const maund = weightKg / KG_PER_MAUND;
     const grossAmount = maund * sellingPrice;
+
+
+    
     const netAmount = grossAmount - transport - labour - commission - other;
     const costOfGoods = maund * currentAvgCost;
     const netProfit = netAmount - costOfGoods;
-    const due = netAmount - amountReceived;
+    const due = grossAmount - amountReceived;
+
+    
 
     document.getElementById('calcMaund').textContent = fmt(maund) + ' Maund';
     document.getElementById('calcGross').textContent = '৳' + fmt(grossAmount);
