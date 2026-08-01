@@ -95,6 +95,15 @@ export async function updatePurchase(id, purchaseData) {
 
     
 export async function deletePurchase(id) {
+    // 1. Delete the linked stock_movements entry first (reverses the stock addition)
+    const { error: movementError } = await supabase
+        .from('stock_movements')
+        .delete()
+        .eq('reference_purchase_id', id);
+
+    if (movementError) throw movementError;
+
+    // 2. Now delete the purchase itself
     const { data, error } = await supabase
         .from('purchases')
         .delete()
@@ -105,7 +114,7 @@ export async function deletePurchase(id) {
     if (!data || data.length === 0) {
         throw new Error('কোনো সারি মুছা যায়নি — permission (RLS) সমস্যা অথবা ভুল id।');
     }
-    }
+}
 
 // ---------- Payments ----------
 export async function addFarmerPayment(paymentData, userId) {
