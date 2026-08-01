@@ -91,14 +91,21 @@ export async function updatePurchase(id, purchaseData) {
     return data;
 }
 
+
+
+    
 export async function deletePurchase(id) {
-    const { error } = await supabase
+    const { data, error } = await supabase
         .from('purchases')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .select();
 
     if (error) throw error;
-}
+    if (!data || data.length === 0) {
+        throw new Error('কোনো সারি মুছা যায়নি — permission (RLS) সমস্যা অথবা ভুল id।');
+    }
+    }
 
 // ---------- Payments ----------
 export async function addFarmerPayment(paymentData, userId) {
