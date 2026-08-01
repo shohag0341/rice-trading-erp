@@ -97,8 +97,13 @@ function updateCalculationPreview() {
 
     const maund = weightKg / KG_PER_MAUND;
     const grossAmount = maund * pricePerMaund;
+
+
+    
     const netCost = grossAmount + transport + labour + food + other;
-    const due = netCost - amountPaid;
+    const due = grossAmount - amountPaid;
+
+    
 
     document.getElementById('calcMaund').textContent = fmt(maund) + ' Maund';
     document.getElementById('calcGross').textContent = '৳' + fmt(grossAmount);
