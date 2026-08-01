@@ -160,6 +160,15 @@ export async function updateSale(id, saleData) {
 }
 
 export async function deleteSale(id) {
+    // 1. Delete the linked stock_movements entry first (reverses the stock deduction)
+    const { error: movementError } = await supabase
+        .from('stock_movements')
+        .delete()
+        .eq('reference_sale_id', id);
+
+    if (movementError) throw movementError;
+
+    // 2. Now delete the sale itself
     const { data, error } = await supabase
         .from('sales')
         .delete()
