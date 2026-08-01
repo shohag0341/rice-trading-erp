@@ -67,6 +67,7 @@ function renderSidebar(activePage) {
             <span>Rice Trading ERP</span>
         </div>
         <nav class="sidebar-nav">${navHtml}</nav>
+        <div class="sidebar-footer">Developed by Shohag</div>
     `;
 }
 
