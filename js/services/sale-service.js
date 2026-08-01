@@ -13,12 +13,15 @@ export async function getBuyersForDropdown() {
     return data;
 }
 
-// ---------- Get average purchase cost per maund for a warehouse + variety combo ----------
+// ---------- Get average purchase cost per maund for a warehouse + variety combo -------
 
 
 
-export async function getAverageCostPerMaund(warehouseId, varietyId) {
-    // 1. Get the full movement history for this warehouse+variety, oldest first
+    
+
+
+    export async function getAverageCostPerMaund(warehouseId, varietyId) {
+    // 1. Get all movements with purchase cost info, oldest first
     const { data: movements, error: movementsError } = await supabase
         .from('stock_movements')
         .select('weight_kg, reference_purchase_id, movement_type, created_at')
@@ -29,40 +32,63 @@ export async function getAverageCostPerMaund(warehouseId, varietyId) {
     if (movementsError) throw movementsError;
     if (!movements.length) return 0;
 
-    // 2. Walk through the history to find where the current "cycle" began
-    //    A cycle resets every time running stock touches zero (within a small tolerance).
-    const ZERO_TOLERANCE_KG = 0.01;
-    let runningStock = 0;
-    let cycleStartIndex = 0;
-
-    movements.forEach((m, idx) => {
-        runningStock += Number(m.weight_kg);
-        if (runningStock <= ZERO_TOLERANCE_KG) {
-            cycleStartIndex = idx + 1;
-        }
-    });
-
-    const currentCycleMovements = movements.slice(cycleStartIndex);
-
-    // 3. Only the purchase_in movements within the current cycle count toward the average
-    const purchaseIds = currentCycleMovements
-        .filter(m => m.movement_type === 'purchase_in' && m.reference_purchase_id)
+    // 2. Fetch cost info for all referenced purchases in one go
+    const purchaseIds = movements
+        .filter(m => m.reference_purchase_id)
         .map(m => m.reference_purchase_id);
 
-    if (!purchaseIds.length) return 0;
+    let purchaseCostMap = {};
+    if (purchaseIds.length) {
+        const { data: purchases, error: purchasesError } = await supabase
+            .from('purchases')
+            .select('id, net_cost, maund')
+            .in('id', purchaseIds);
 
-    const { data: purchases, error: purchasesError } = await supabase
-        .from('purchases')
-        .select('net_cost, maund')
-        .in('id', purchaseIds);
+        if (purchasesError) throw purchasesError;
+        purchases.forEach(p => {
+            purchaseCostMap[p.id] = Number(p.net_cost) / Number(p.maund); // cost per kg basis below
+        });
+    }
 
-    if (purchasesError) throw purchasesError;
+    // 3. Walk through the movements maintaining a true moving weighted average.
+    //    - On purchase_in: blend the new cost with existing stock value
+    //    - On any "out" movement (sale/damage/transfer out): reduce quantity, average cost per kg stays the same
+    //    - If stock hits zero (within tolerance), reset average to 0
+    const ZERO_TOLERANCE_KG = 0.01;
+    let currentStockKg = 0;
+    let currentAvgCostPerKg = 0;
 
-    const totalMaund = purchases.reduce((sum, p) => sum + Number(p.maund), 0);
-    const totalCost = purchases.reduce((sum, p) => sum + Number(p.net_cost), 0);
+    for (const m of movements) {
+        const weightKg = Number(m.weight_kg);
 
-    return totalMaund > 0 ? totalCost / totalMaund : 0;
-}
+        if (weightKg > 0) {
+            // Incoming stock (purchase, transfer in)
+            let costPerKg = 0;
+            if (m.movement_type === 'purchase_in' && m.reference_purchase_id) {
+                costPerKg = purchaseCostMap[m.reference_purchase_id] || 0;
+            }
+            // (transfer_in / adjustment with no cost reference contributes 0 cost — rare edge case)
+
+            const existingValue = currentStockKg * currentAvgCostPerKg;
+            const incomingValue = weightKg * costPerKg;
+            const newStockKg = currentStockKg + weightKg;
+
+            currentAvgCostPerKg = newStockKg > 0 ? (existingValue + incomingValue) / newStockKg : 0;
+            currentStockKg = newStockKg;
+        } else {
+            // Outgoing stock (sale, damage, transfer out) — cost per kg unchanged, quantity reduces
+            currentStockKg += weightKg; // weightKg is negative here
+
+            if (currentStockKg <= ZERO_TOLERANCE_KG) {
+                currentStockKg = 0;
+                currentAvgCostPerKg = 0; // reset — next purchase starts a fresh cycle
+            }
+        }
+    }
+
+    // Convert cost-per-kg back to cost-per-maund
+    return currentAvgCostPerKg * 40; // uses your KG_PER_MAUND (40kg = 1 maund)
+    }
 
 
 
