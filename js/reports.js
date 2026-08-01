@@ -434,9 +434,18 @@ document.getElementById('paymentForm').addEventListener('submit', async (e) => {
     }
 });
 
-// ---------- Init: default to "This Month" ----------
-document.querySelector('.quick-range-btn[data-range="month"]').click();
 
+// ---------- Init: check URL params first, else default to "This Month" ----------
+const urlParams = new URLSearchParams(window.location.search);
+const urlReportType = urlParams.get('type');
+const urlRange = urlParams.get('range');
 
+if (urlReportType) {
+    reportTypeSelect.value = urlReportType;
+    currentReportType = urlReportType;
+}
+
+const targetRange = urlRange || 'month';
+document.querySelector(`.quick-range-btn[data-range="${targetRange}"]`).click();
 
 
