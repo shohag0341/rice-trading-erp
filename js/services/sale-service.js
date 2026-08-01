@@ -160,12 +160,16 @@ export async function updateSale(id, saleData) {
 }
 
 export async function deleteSale(id) {
-    const { error } = await supabase
+    const { data, error } = await supabase
         .from('sales')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .select();
 
     if (error) throw error;
+    if (!data || data.length === 0) {
+        throw new Error('কোনো সারি মুছা যায়নি — permission (RLS) সমস্যা অথবা ভুল id।');
+    }
 }
 
 // ---------- Payments ----------
