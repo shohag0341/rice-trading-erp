@@ -43,9 +43,15 @@ export async function getAverageCostPerMaund(warehouseId, varietyId) {
             .in('id', purchaseIds);
 
         if (purchasesError) throw purchasesError;
+        
+        
         purchases.forEach(p => {
-            purchaseCostMap[p.id] = Number(p.net_cost) / Number(p.maund); // cost per kg (see conversion below)
+            const weightKgOfPurchase = Number(p.maund) * 40; // convert maund back to kg
+            purchaseCostMap[p.id] = weightKgOfPurchase > 0 ? Number(p.net_cost) / weightKgOfPurchase : 0; // true cost per KG
         });
+
+
+        
     }
 
     // 3. Walk through the movements maintaining a true moving weighted average
