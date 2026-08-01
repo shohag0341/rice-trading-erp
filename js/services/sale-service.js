@@ -18,17 +18,48 @@ export async function getBuyersForDropdown() {
 
 
 export async function getAverageCostPerMaund(warehouseId, varietyId) {
-    const { data, error } = await supabase
+    // 1. Get the full movement history for this warehouse+variety, oldest first
+    const { data: movements, error: movementsError } = await supabase
+        .from('stock_movements')
+        .select('weight_kg, reference_purchase_id, movement_type, created_at')
+        .eq('warehouse_id', warehouseId)
+        .eq('paddy_variety_id', varietyId)
+        .order('created_at', { ascending: true });
+
+    if (movementsError) throw movementsError;
+    if (!movements.length) return 0;
+
+    // 2. Walk through the history to find where the current "cycle" began
+    //    A cycle resets every time running stock touches zero (within a small tolerance).
+    const ZERO_TOLERANCE_KG = 0.01;
+    let runningStock = 0;
+    let cycleStartIndex = 0;
+
+    movements.forEach((m, idx) => {
+        runningStock += Number(m.weight_kg);
+        if (runningStock <= ZERO_TOLERANCE_KG) {
+            cycleStartIndex = idx + 1;
+        }
+    });
+
+    const currentCycleMovements = movements.slice(cycleStartIndex);
+
+    // 3. Only the purchase_in movements within the current cycle count toward the average
+    const purchaseIds = currentCycleMovements
+        .filter(m => m.movement_type === 'purchase_in' && m.reference_purchase_id)
+        .map(m => m.reference_purchase_id);
+
+    if (!purchaseIds.length) return 0;
+
+    const { data: purchases, error: purchasesError } = await supabase
         .from('purchases')
         .select('net_cost, maund')
-        .eq('warehouse_id', warehouseId)
-        .eq('paddy_variety_id', varietyId);
+        .in('id', purchaseIds);
 
-    if (error) throw error;
-    if (!data.length) return 0;
+    if (purchasesError) throw purchasesError;
 
-    const totalMaund = data.reduce((sum, p) => sum + Number(p.maund), 0);
-    const totalCost = data.reduce((sum, p) => sum + Number(p.net_cost), 0);
+    const totalMaund = purchases.reduce((sum, p) => sum + Number(p.maund), 0);
+    const totalCost = purchases.reduce((sum, p) => sum + Number(p.net_cost), 0);
 
     return totalMaund > 0 ? totalCost / totalMaund : 0;
 }
