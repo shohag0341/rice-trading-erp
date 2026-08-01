@@ -13,15 +13,13 @@ export async function getBuyersForDropdown() {
     return data;
 }
 
-// ---------- Get average purchase cost per maund for a warehouse + variety combo -------
-
-
-
-    
-
-
-    export async function getAverageCostPerMaund(warehouseId, varietyId) {
-    // 1. Get all movements with purchase cost info, oldest first
+// ---------- Get average purchase cost per maund for a warehouse + variety combo ----------
+// Uses a true moving weighted average across the full stock movement history:
+// - purchase_in blends new cost into existing stock value
+// - any "out" movement (sale/damage/transfer) reduces quantity, cost/kg stays the same
+// - if stock hits zero (within tolerance), average resets to 0 so the next purchase starts fresh
+export async function getAverageCostPerMaund(warehouseId, varietyId) {
+    // 1. Get all movements, oldest first
     const { data: movements, error: movementsError } = await supabase
         .from('stock_movements')
         .select('weight_kg, reference_purchase_id, movement_type, created_at')
@@ -46,14 +44,11 @@ export async function getBuyersForDropdown() {
 
         if (purchasesError) throw purchasesError;
         purchases.forEach(p => {
-            purchaseCostMap[p.id] = Number(p.net_cost) / Number(p.maund); // cost per kg basis below
+            purchaseCostMap[p.id] = Number(p.net_cost) / Number(p.maund); // cost per kg (see conversion below)
         });
     }
 
-    // 3. Walk through the movements maintaining a true moving weighted average.
-    //    - On purchase_in: blend the new cost with existing stock value
-    //    - On any "out" movement (sale/damage/transfer out): reduce quantity, average cost per kg stays the same
-    //    - If stock hits zero (within tolerance), reset average to 0
+    // 3. Walk through the movements maintaining a true moving weighted average
     const ZERO_TOLERANCE_KG = 0.01;
     let currentStockKg = 0;
     let currentAvgCostPerKg = 0;
@@ -67,7 +62,6 @@ export async function getBuyersForDropdown() {
             if (m.movement_type === 'purchase_in' && m.reference_purchase_id) {
                 costPerKg = purchaseCostMap[m.reference_purchase_id] || 0;
             }
-            // (transfer_in / adjustment with no cost reference contributes 0 cost — rare edge case)
 
             const existingValue = currentStockKg * currentAvgCostPerKg;
             const incomingValue = weightKg * costPerKg;
@@ -86,13 +80,9 @@ export async function getBuyersForDropdown() {
         }
     }
 
-    // Convert cost-per-kg back to cost-per-maund
-    return currentAvgCostPerKg * 40; // uses your KG_PER_MAUND (40kg = 1 maund)
-    }
-
-
-
-
+    // Convert cost-per-kg back to cost-per-maund (40kg = 1 maund)
+    return currentAvgCostPerKg * 40;
+}
 
 // ---------- Get current available stock for a warehouse + variety combo ----------
 export async function getAvailableStock(warehouseId, varietyId) {
@@ -198,4 +188,4 @@ export async function generateSaleInvoiceNumber() {
 
     const sequence = String((count || 0) + 1).padStart(3, '0');
     return `SAL-${datePart}-${sequence}`;
-      }
+           }
