@@ -73,3 +73,55 @@ export async function getTopVarieties(limit = 5) {
     if (error) throw error;
     return data;
 }
+
+
+
+
+
+// ---------- Variety-wise breakdown, filtered by date range ----------
+export async function getVarietyBreakdown(startDate, endDate) {
+    const [purchasesRes, salesRes, varietiesRes] = await Promise.all([
+        supabase.from('purchases')
+            .select('paddy_variety_id, maund, price_per_maund, gross_amount, paddy_varieties(name)')
+            .gte('purchase_date', startDate).lte('purchase_date', endDate),
+        supabase.from('sales')
+            .select('paddy_variety_id, maund, selling_price_per_maund, gross_amount, net_profit, paddy_varieties(name)')
+            .gte('sale_date', startDate).lte('sale_date', endDate),
+        supabase.from('paddy_varieties').select('id, name').eq('is_active', true)
+    ]);
+
+    if (purchasesRes.error) throw purchasesRes.error;
+    if (salesRes.error) throw salesRes.error;
+    if (varietiesRes.error) throw varietiesRes.error;
+
+    const purchases = purchasesRes.data;
+    const sales = salesRes.data;
+    const varieties = varietiesRes.data;
+
+    // Build a breakdown per variety
+    const breakdown = varieties.map(v => {
+        const varietyPurchases = purchases.filter(p => p.paddy_variety_id === v.id);
+        const varietySales = sales.filter(s => s.paddy_variety_id === v.id);
+
+        const purchaseMaund = varietyPurchases.reduce((s, p) => s + Number(p.maund), 0);
+        const purchaseAmount = varietyPurchases.reduce((s, p) => s + Number(p.gross_amount), 0);
+        const avgPurchasePrice = purchaseMaund > 0 ? purchaseAmount / purchaseMaund : 0;
+
+        const salesMaund = varietySales.reduce((s, x) => s + Number(x.maund), 0);
+        const salesAmount = varietySales.reduce((s, x) => s + Number(x.gross_amount), 0);
+        const avgSellingPrice = salesMaund > 0 ? salesAmount / salesMaund : 0;
+
+        const totalProfit = varietySales.reduce((s, x) => s + Number(x.net_profit), 0);
+        const profitPerMaund = salesMaund > 0 ? totalProfit / salesMaund : 0;
+
+        return {
+            variety_name: v.name,
+            purchaseMaund, avgPurchasePrice,
+            salesMaund, avgSellingPrice,
+            totalProfit, profitPerMaund
+        };
+    });
+
+    // Only show varieties that had some activity in this period
+    return breakdown.filter(b => b.purchaseMaund > 0 || b.salesMaund > 0);
+}
