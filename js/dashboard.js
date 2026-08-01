@@ -33,34 +33,37 @@ async function loadDashboard() {
     }
 }
 
+
+
+
 function renderStatCards(today, cash, stockTotal) {
     const grid = document.getElementById('statsGrid');
     grid.innerHTML = `
-        <div class="stat-card">
+        <div class="stat-card" style="cursor:pointer;" onclick="window.location.href='reports.html?type=purchase&range=today'">
             <div class="stat-card-icon bg-blue"><i class="fa-solid fa-cart-shopping"></i></div>
             <div class="stat-card-label">Today's Purchase</div>
             <div class="stat-card-value">৳${fmt(today.purchase.total_net_cost)}</div>
             <div class="stat-card-sub">${fmt(today.purchase.total_maund)} Maund</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" style="cursor:pointer;" onclick="window.location.href='reports.html?type=sales&range=today'">
             <div class="stat-card-icon bg-green"><i class="fa-solid fa-money-bill-trend-up"></i></div>
             <div class="stat-card-label">Today's Sales</div>
             <div class="stat-card-value">৳${fmt(today.sales.total_net_amount)}</div>
             <div class="stat-card-sub">${fmt(today.sales.total_maund)} Maund</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" style="cursor:pointer;" onclick="window.location.href='reports.html?type=profit&range=today'">
             <div class="stat-card-icon bg-purple"><i class="fa-solid fa-sack-dollar"></i></div>
             <div class="stat-card-label">Today's Profit</div>
             <div class="stat-card-value">৳${fmt(today.sales.total_profit)}</div>
             <div class="stat-card-sub">Net profit today</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" style="cursor:pointer;" onclick="window.location.href='inventory.html'">
             <div class="stat-card-icon bg-orange"><i class="fa-solid fa-boxes-stacked"></i></div>
             <div class="stat-card-label">Current Stock</div>
             <div class="stat-card-value">${fmt(stockTotal)}</div>
             <div class="stat-card-sub">Maund across all warehouses</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" style="cursor:pointer;" onclick="window.location.href='cash-adjustments.html'">
             <div class="stat-card-icon bg-red"><i class="fa-solid fa-wallet"></i></div>
             <div class="stat-card-label">Cash Balance</div>
             <div class="stat-card-value">৳${fmt(cash?.cash_balance)}</div>
@@ -68,6 +71,10 @@ function renderStatCards(today, cash, stockTotal) {
         </div>
     `;
 }
+
+
+
+
 
 let trendChartInstance = null;
 
