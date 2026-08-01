@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analytics - Rice Trading ERP Pro</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<link rel="stylesheet" href="css/variables.css">
+<link rel="stylesheet" href="css/main.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/farmers.css">
+<link rel="stylesheet" href="css/dashboard.css">
+<link rel="stylesheet" href="css/reports.css">
+</head>
+<body>
+
+<div class="app-shell">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="main-content">
+        <header class="top-header" id="topHeader"></header>
+
+        <main class="page-content">
+            <div class="report-filters">
+                <div class="filter-group">
+                    <label>Quick Range</label>
+                    <div class="quick-range-btns">
+                        <button type="button" class="quick-range-btn" data-range="today">Today</button>
+                        <button type="button" class="quick-range-btn" data-range="week">This Week</button>
+                        <button type="button" class="quick-range-btn active" data-range="month">This Month</button>
+                        <button type="button" class="quick-range-btn" data-range="year">This Year</button>
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <label>Start Date</label>
+                    <input type="date" id="startDate">
+                </div>
+
+                <div class="filter-group">
+                    <label>End Date</label>
+                    <input type="date" id="endDate">
+                </div>
+            </div>
+
+            <div class="report-summary-grid" id="summaryGrid"></div>
+
+            <h3 style="font-size:15px; font-weight:700; margin:24px 0 14px; color:var(--text-primary);">
+                <i class="fa-solid fa-trophy"></i> All-Time Leaderboard
+            </h3>
+            <div class="stats-grid" id="bestsGrid">
+                <div class="skeleton" style="height:110px;"></div>
+                <div class="skeleton" style="height:110px;"></div>
+                <div class="skeleton" style="height:110px;"></div>
+                <div class="skeleton" style="height:110px;"></div>
+            </div>
+
+            <div class="bottom-grid" style="margin-top:20px;">
+                <div class="card-box">
+                    <div class="card-box-title">Top 5 Villages</div>
+                    <div id="topVillagesTable">
+                        <div class="table-empty"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>
+                    </div>
+                </div>
+                <div class="card-box">
+                    <div class="card-box-title">Top 5 Paddy Varieties</div>
+                    <div id="topVarietiesTable">
+                        <div class="table-empty"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script type="module" src="js/analytics.js"></script>
+</body>
+</html>
