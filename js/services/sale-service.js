@@ -14,10 +14,13 @@ export async function getBuyersForDropdown() {
 }
 
 // ---------- Get average purchase cost per maund for a warehouse + variety combo ----------
+
+
+
 export async function getAverageCostPerMaund(warehouseId, varietyId) {
     const { data, error } = await supabase
         .from('purchases')
-        .select('price_per_maund, maund')
+        .select('net_cost, maund')
         .eq('warehouse_id', warehouseId)
         .eq('paddy_variety_id', varietyId);
 
@@ -25,10 +28,14 @@ export async function getAverageCostPerMaund(warehouseId, varietyId) {
     if (!data.length) return 0;
 
     const totalMaund = data.reduce((sum, p) => sum + Number(p.maund), 0);
-    const totalCost = data.reduce((sum, p) => sum + (Number(p.price_per_maund) * Number(p.maund)), 0);
+    const totalCost = data.reduce((sum, p) => sum + Number(p.net_cost), 0);
 
     return totalMaund > 0 ? totalCost / totalMaund : 0;
 }
+
+
+
+
 
 // ---------- Get current available stock for a warehouse + variety combo ----------
 export async function getAvailableStock(warehouseId, varietyId) {
