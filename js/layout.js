@@ -113,6 +113,9 @@ function renderHeader(activePage) {
     const header = document.getElementById('topHeader');
     const pageTitle = NAV_ITEMS.find(i => i.page === activePage)?.label || 'Dashboard';
     const initials = (currentProfile?.full_name || 'U').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    const avatarHtml = currentProfile?.photo_url
+        ? `<img src="${currentProfile.photo_url}" class="user-avatar" style="object-fit:cover;">`
+        : `<div class="user-avatar">${initials}</div>`;
 
     header.innerHTML = `
         <div class="header-left">
@@ -130,13 +133,19 @@ function renderHeader(activePage) {
                     <div class="notif-empty"><i class="fa-solid fa-spinner fa-spin"></i></div>
                 </div>
             </div>
-            <div class="user-menu" id="userMenu">
-                <div class="user-avatar">${initials}</div>
-                <div class="user-info">
-                    <div class="user-name">${currentProfile?.full_name || 'User'}</div>
-                    <div class="user-role">${currentProfile?.role || ''}</div>
+            <div class="user-menu-wrapper">
+                <div class="user-menu" id="userMenuToggle">
+                    ${avatarHtml}
+                    <div class="user-info">
+                        <div class="user-name">${currentProfile?.full_name || 'User'}</div>
+                        <div class="user-role">${currentProfile?.role || ''}</div>
+                    </div>
+                    <i class="fa-solid fa-chevron-down" style="font-size:11px;color:var(--text-secondary);"></i>
                 </div>
-                <i class="fa-solid fa-chevron-down" style="font-size:11px;color:var(--text-secondary);"></i>
+                <div class="user-dropdown" id="userDropdown">
+                    <a href="my-profile.html" class="user-dropdown-item"><i class="fa-solid fa-user"></i> My Profile</a>
+                    <button type="button" class="user-dropdown-item" id="logoutMenuBtn"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+                </div>
             </div>
         </div>
     `;
@@ -239,11 +248,23 @@ function bindLayoutEvents() {
         }
     });
 
-    
+    // User menu dropdown (My Profile / Logout)
+    const userMenuToggle = document.getElementById('userMenuToggle');
+    const userDropdown = document.getElementById('userDropdown');
 
-    // User menu -> open styled logout confirmation modal
-    const userMenu = document.getElementById('userMenu');
-    userMenu?.addEventListener('click', () => {
+    userMenuToggle?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        userDropdown.classList.toggle('open');
+    });
+
+    document.addEventListener('click', (e) => {
+        if (userDropdown && userDropdown.classList.contains('open') && !userMenuToggle.contains(e.target) && !userDropdown.contains(e.target)) {
+            userDropdown.classList.remove('open');
+        }
+    });
+
+    document.getElementById('logoutMenuBtn')?.addEventListener('click', () => {
+        userDropdown.classList.remove('open');
         document.getElementById('logoutModalOverlay')?.classList.add('open');
     });
 }
@@ -280,9 +301,6 @@ function injectLogoutModal() {
         window.location.href = 'index.html';
     });
 }
-
-
-
 
 function updateThemeIcon(theme) {
     const icon = document.querySelector('#themeToggle i');
