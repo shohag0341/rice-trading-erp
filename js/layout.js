@@ -15,7 +15,16 @@ const NAV_ITEMS = [
     { icon: 'fa-boxes-stacked', label: 'Inventory', href: 'inventory.html', page: 'inventory' },
     { icon: 'fa-receipt', label: 'Expenses', href: 'expenses.html', page: 'expenses' },
     { section: 'Insights' },
-    { icon: 'fa-file-lines', label: 'Reports', href: 'reports.html', page: 'reports' },
+    {
+        icon: 'fa-file-lines', label: 'Reports', page: 'reports',
+        children: [
+            { label: 'Purchase Report', href: 'reports.html?type=purchase' },
+            { label: 'Sales Report', href: 'reports.html?type=sales' },
+            { label: 'Expense Report', href: 'reports.html?type=expense' },
+            { label: 'Profit & Loss', href: 'reports.html?type=profit' },
+            { label: 'Cost Analysis', href: 'reports.html?type=costanalysis' },
+        ]
+    },
     { icon: 'fa-magnifying-glass-chart', label: 'Analytics', href: 'analytics.html', page: 'analytics' },
     
     
@@ -48,9 +57,29 @@ function renderSidebar(activePage) {
     const sidebar = document.getElementById('sidebar');
     let navHtml = '';
 
+    const urlParams = new URLSearchParams(window.location.search);
+    const activeReportType = urlParams.get('type') || 'purchase';
+
     NAV_ITEMS.forEach(item => {
         if (item.section) {
             navHtml += `<div class="nav-section-title">${item.section}</div>`;
+        } else if (item.children) {
+            const isParentActive = item.page === activePage;
+            navHtml += `
+                <div class="nav-group ${isParentActive ? 'expanded' : ''}">
+                    <button type="button" class="nav-item nav-item-toggle ${isParentActive ? 'active' : ''}">
+                        <i class="fa-solid ${item.icon}"></i>
+                        <span>${item.label}</span>
+                        <i class="fa-solid fa-chevron-down nav-toggle-arrow"></i>
+                    </button>
+                    <div class="nav-submenu">
+                        ${item.children.map(child => {
+                            const childType = new URLSearchParams(child.href.split('?')[1]).get('type');
+                            const isChildActive = isParentActive && childType === activeReportType;
+                            return `<a href="${child.href}" class="nav-subitem ${isChildActive ? 'active' : ''}">${child.label}</a>`;
+                        }).join('')}
+                    </div>
+                </div>`;
         } else {
             const isActive = item.page === activePage ? 'active' : '';
             navHtml += `
@@ -67,8 +96,14 @@ function renderSidebar(activePage) {
             <span>Rice Trading ERP</span>
         </div>
         <nav class="sidebar-nav">${navHtml}</nav>
-        <div class="sidebar-footer">Developed by Shohag</div>
     `;
+
+    // Expand/collapse submenu on toggle click
+    sidebar.querySelectorAll('.nav-item-toggle').forEach(btn => {
+        btn.addEventListener('click', () => {
+            btn.closest('.nav-group').classList.toggle('expanded');
+        });
+    });
 }
 
 function renderHeader(activePage) {
