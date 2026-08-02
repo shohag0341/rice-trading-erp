@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Profile - Rice Trading ERP Pro</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<link rel="stylesheet" href="css/variables.css">
+<link rel="stylesheet" href="css/main.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/farmers.css">
+<link rel="stylesheet" href="css/profile.css">
+</head>
+<body>
+
+<div class="app-shell">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="main-content">
+        <header class="top-header" id="topHeader"></header>
+
+        <main class="page-content">
+            <div class="profile-header" id="myProfileHeader">
+                <div class="skeleton" style="width:100%; height:64px;"></div>
+            </div>
+
+            <div class="card-box">
+                <div class="card-box-title">Edit Profile</div>
+                <form id="myProfileForm">
+                    <div class="form-group-modal">
+                        <label for="myProfileFullName">Full Name *</label>
+                        <input type="text" id="myProfileFullName" required>
+                    </div>
+                    <div class="form-group-modal">
+                        <label for="myProfilePhone">Phone</label>
+                        <input type="text" id="myProfilePhone" placeholder="01xxxxxxxxx">
+                    </div>
+                    <div class="form-group-modal">
+                        <label>Email</label>
+                        <input type="text" id="myProfileEmail" disabled>
+                    </div>
+                    <div class="form-group-modal">
+                        <label>Role</label>
+                        <input type="text" id="myProfileRole" disabled>
+                    </div>
+                    <button type="submit" class="btn-primary" id="myProfileSaveBtn">Save Changes</button>
+                </form>
+            </div>
+        </main>
+    </div>
+</div>
+
+<input type="file" id="avatarFileInput" accept="image/*" style="display:none;">
+<div class="toast-container" id="toastContainer"></div>
+
+<script type="module" src="js/my-profile.js"></script>
+</body>
+</html>
