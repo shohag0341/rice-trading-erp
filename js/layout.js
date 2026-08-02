@@ -1,5 +1,6 @@
 import { getCurrentSession, getCurrentUserProfile, logoutUser } from './services/auth-service.js';
-import { getUnreadCount } from './services/notification-service.js';
+import { getFarmersWithDue } from './services/farmer-service.js';
+import { getBuyersWithDue } from './services/buyer-service.js';
 
 // Navigation menu structure - icons and links for the sidebar
 const NAV_ITEMS = [
@@ -35,6 +36,7 @@ const NAV_ITEMS = [
 ];
 
 let currentProfile = null;
+const fmt = (num) => new Intl.NumberFormat('en-BD', { maximumFractionDigits: 0 }).format(num || 0);
 
 // Must be called at the top of every protected page
 export async function initLayout(activePage) {
@@ -48,7 +50,7 @@ export async function initLayout(activePage) {
     renderSidebar(activePage);
     renderHeader(activePage);
     bindLayoutEvents();
-    loadNotificationBadge(session.user.id);
+    loadDueNotifications();
 
     return currentProfile;
 }
@@ -118,10 +120,15 @@ function renderHeader(activePage) {
         </div>
         <div class="header-right">
             <button class="header-icon-btn" id="themeToggle"><i class="fa-solid fa-moon"></i></button>
-            <button class="header-icon-btn" id="notifBtn">
-                <i class="fa-solid fa-bell"></i>
-                <span class="badge-dot" id="notifBadge" style="display:none;"></span>
-            </button>
+            <div class="notif-wrapper">
+                <button class="header-icon-btn" id="notifBtn">
+                    <i class="fa-solid fa-bell"></i>
+                    <span class="badge-dot" id="notifBadge" style="display:none;"></span>
+                </button>
+                <div class="notif-dropdown" id="notifDropdown">
+                    <div class="notif-empty"><i class="fa-solid fa-spinner fa-spin"></i></div>
+                </div>
+            </div>
             <div class="user-menu" id="userMenu">
                 <div class="user-avatar">${initials}</div>
                 <div class="user-info">
@@ -134,13 +141,55 @@ function renderHeader(activePage) {
     `;
 }
 
-async function loadNotificationBadge(userId) {
+// ---------- Due payments/collections shown in the notification bell ----------
+async function loadDueNotifications() {
+    const badge = document.getElementById('notifBadge');
+    const dropdown = document.getElementById('notifDropdown');
+
     try {
-        const count = await getUnreadCount(userId);
-        const badge = document.getElementById('notifBadge');
-        if (count > 0) badge.style.display = 'block';
+        const [farmersDue, buyersDue] = await Promise.all([
+            getFarmersWithDue(),
+            getBuyersWithDue()
+        ]);
+
+        const totalCount = farmersDue.length + buyersDue.length;
+        if (totalCount > 0) badge.style.display = 'block';
+
+        if (!totalCount) {
+            dropdown.innerHTML = `<div class="notif-empty">কোনো বকেয়া নেই।</div>`;
+            return;
+        }
+
+        let html = '';
+
+        if (farmersDue.length) {
+            html += `<div class="notif-section-title">ফার্মারকে দিতে হবে</div>`;
+            html += farmersDue.map(f => `
+                <a href="farmer-profile.html?id=${f.id}" class="notif-item">
+                    <i class="fa-solid fa-user-tie"></i>
+                    <div class="notif-item-text">
+                        <div class="notif-item-name">${f.name}</div>
+                        <div class="notif-item-sub">বাকি ৳${fmt(f.outstanding_balance)}</div>
+                    </div>
+                </a>`).join('');
+        }
+
+        if (buyersDue.length) {
+            html += `<div class="notif-section-title">বায়ারের থেকে পাব</div>`;
+            html += buyersDue.map(b => `
+                <a href="buyer-profile.html?id=${b.id}" class="notif-item">
+                    <i class="fa-solid fa-handshake"></i>
+                    <div class="notif-item-text">
+                        <div class="notif-item-name">${b.name}</div>
+                        <div class="notif-item-sub">পাব ৳${fmt(b.outstanding_balance)}</div>
+                    </div>
+                </a>`).join('');
+        }
+
+        dropdown.innerHTML = html;
     } catch (e) {
-        console.error('Notification badge error:', e);
+        console.error('Due notifications error:', e);
+        dropdown.innerHTML = `<div class="notif-empty">লোড করা যায়নি।</div>`;
     }
 }
 
@@ -172,6 +221,21 @@ function bindLayoutEvents() {
         document.documentElement.setAttribute('data-theme', next);
         localStorage.setItem('theme', next);
         updateThemeIcon(next);
+    });
+
+    // Notification bell dropdown toggle
+    const notifBtn = document.getElementById('notifBtn');
+    const notifDropdown = document.getElementById('notifDropdown');
+
+    notifBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        notifDropdown.classList.toggle('open');
+    });
+
+    document.addEventListener('click', (e) => {
+        if (notifDropdown && notifDropdown.classList.contains('open') && !notifDropdown.contains(e.target) && e.target !== notifBtn) {
+            notifDropdown.classList.remove('open');
+        }
     });
 
     // User menu -> simple logout on click for now
