@@ -196,3 +196,27 @@ export async function deleteFarmerPayment(paymentId, purchaseId, amount) {
 
     if (updateError) throw updateError;
 }
+
+
+
+
+export async function getFarmersWithDue() {
+    const { data: purchases, error } = await supabase
+        .from('purchases')
+        .select('farmer_id, gross_amount, amount_paid, farmers(name)');
+
+    if (error) throw error;
+
+    const totals = {};
+    purchases.forEach(p => {
+        if (!p.farmer_id) return;
+        if (!totals[p.farmer_id]) {
+            totals[p.farmer_id] = { id: p.farmer_id, name: p.farmers?.name || '-', outstanding_balance: 0 };
+        }
+        totals[p.farmer_id].outstanding_balance += Number(p.gross_amount) - Number(p.amount_paid);
+    });
+
+    return Object.values(totals)
+        .filter(f => f.outstanding_balance > 0.5)
+        .sort((a, b) => b.outstanding_balance - a.outstanding_balance);
+}
