@@ -290,11 +290,48 @@ async function openEditModal(id) {
     document.getElementById('saleAmountReceived').value = sale.amount_received;
     document.getElementById('saleRemarks').value = sale.remarks || '';
 
+    
+    
+    
+    // Track the original cost recorded at the time of this sale.
+    // We do NOT call refreshStockAndCost() here — this sale's own stock-out
+    // movement already exists in the ledger, so a live lookup would (wrongly)
+    // reflect stock AFTER this sale instead of before it, often showing 0.
     currentAvgCost = Number(sale.avg_cost_per_maund || 0);
-    await refreshStockAndCost();
+    await showStoredStockInfo(sale.warehouse_id, sale.paddy_variety_id);
+    updateCalculationPreview();
 
     modalOverlay.classList.add('open');
 }
+
+// Used only when opening Edit: shows current live stock (informational)
+// alongside the cost that was ACTUALLY recorded for this sale, without
+// overwriting currentAvgCost.
+async function showStoredStockInfo(warehouseId, varietyId) {
+    const stockInfoBox = document.getElementById('stockInfoBox');
+    if (!warehouseId || !varietyId) {
+        stockInfoBox.style.display = 'none';
+        return;
+    }
+
+    stockInfoBox.style.display = 'block';
+    stockInfoBox.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Checking stock...`;
+
+    try {
+        const stock = await getAvailableStock(warehouseId, varietyId);
+        currentAvailableStock = Number(stock.current_maund || 0);
+
+        stockInfoBox.innerHTML = `
+            <i class="fa-solid fa-boxes-stacked"></i>
+            Available Stock now: <strong>${fmt(currentAvailableStock)} Maund</strong>
+            &nbsp;|&nbsp; Cost recorded for this sale: <strong>৳${fmt(currentAvgCost)}/Maund</strong>
+        `;
+    } catch (err) {
+        stockInfoBox.innerHTML = `Could not load stock info.`;
+    }
+}
+
+
 
 function closeModal() {
     modalOverlay.classList.remove('open');
