@@ -248,7 +248,20 @@ function renderTable(sales) {
                                                                                  }
 
 
+// "Full Received" quick button — fills amount_received with exactly the gross (buyer's) amount
+document.getElementById('markReceivedBtn').addEventListener('click', () => {
+    const weightKg = parseFloat(document.getElementById('saleWeight').value) || 0;
+    const pricePerMaund = parseFloat(document.getElementById('saleSellingPrice').value) || 0;
+    const grossAmount = (weightKg / 40) * pricePerMaund;
 
+    if (grossAmount <= 0) {
+        showToast('Enter Weight and Selling Price first.', 'error');
+        return;
+    }
+
+    document.getElementById('saleAmountReceived').value = grossAmount.toFixed(2);
+    updateCalculationPreview();
+});
 
 
 // ---------- Modal open/close ----------
