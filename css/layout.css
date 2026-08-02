@@ -268,3 +268,63 @@
     color: var(--color-primary);
     font-weight: 700;
 }
+
+
+
+
+
+/* ---------- NOTIFICATION BELL DROPDOWN ---------- */
+.notif-wrapper { position: relative; }
+
+.notif-dropdown {
+    display: none;
+    position: absolute;
+    top: 48px;
+    right: -8px;
+    width: 300px;
+    max-height: 360px;
+    overflow-y: auto;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
+    padding: 8px;
+    z-index: 200;
+}
+
+.notif-dropdown.open { display: block; }
+
+.notif-section-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+    font-weight: 700;
+    padding: 8px 10px 4px;
+}
+
+.notif-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    color: var(--text-primary);
+    transition: var(--transition);
+}
+
+.notif-item:hover { background: var(--bg-primary); }
+
+.notif-item i { color: var(--color-danger); font-size: 14px; width: 18px; text-align: center; }
+
+.notif-item-name { font-size: 13px; font-weight: 600; }
+
+.notif-item-sub { font-size: 12px; color: var(--color-danger); font-weight: 600; }
+
+.notif-empty {
+    padding: 20px 10px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 13px;
+}
