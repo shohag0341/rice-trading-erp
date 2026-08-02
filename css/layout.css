@@ -413,4 +413,65 @@
 .logout-confirm-btn:hover { background: #b91c1c; }
 
 
+/* ---------- USER MENU DROPDOWN (My Profile / Logout) ---------- */
+.user-menu-wrapper { position: relative; }
+
+.user-dropdown {
+    display: none;
+    position: absolute;
+    top: 54px;
+    right: 0;
+    width: 180px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
+    padding: 6px;
+    z-index: 200;
+}
+
+.user-dropdown.open { display: block; }
+
+.user-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 500;
+    background: none;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    transition: var(--transition);
+    font-family: inherit;
+}
+
+.user-dropdown-item:hover { background: var(--bg-primary); color: var(--color-primary); }
+
+/* ---------- MY PROFILE PAGE: avatar upload ---------- */
+.avatar-upload-wrapper .profile-avatar-lg { position: relative; }
+
+.avatar-edit-btn {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    border: 2px solid var(--bg-secondary);
+}
+
+
+
 
