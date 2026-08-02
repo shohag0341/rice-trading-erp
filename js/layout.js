@@ -49,6 +49,7 @@ export async function initLayout(activePage) {
     currentProfile = await getCurrentUserProfile();
     renderSidebar(activePage);
     renderHeader(activePage);
+    injectLogoutModal();
     bindLayoutEvents();
     loadDueNotifications();
 
@@ -238,15 +239,50 @@ function bindLayoutEvents() {
         }
     });
 
-    // User menu -> simple logout on click for now
+    
+
+    // User menu -> open styled logout confirmation modal
     const userMenu = document.getElementById('userMenu');
-    userMenu?.addEventListener('click', async () => {
-        if (confirm('Log out of Rice Trading ERP Pro?')) {
-            await logoutUser();
-            window.location.href = 'index.html';
-        }
+    userMenu?.addEventListener('click', () => {
+        document.getElementById('logoutModalOverlay')?.classList.add('open');
     });
 }
+
+function injectLogoutModal() {
+    if (document.getElementById('logoutModalOverlay')) return;
+
+    const modal = document.createElement('div');
+    modal.id = 'logoutModalOverlay';
+    modal.className = 'logout-modal-overlay';
+    modal.innerHTML = `
+        <div class="logout-modal-box">
+            <div class="logout-modal-icon"><i class="fa-solid fa-right-from-bracket"></i></div>
+            <div class="logout-modal-title">লগ আউট করবেন?</div>
+            <div class="logout-modal-text">আপনি কি Rice Trading ERP Pro থেকে লগ আউট করতে চান?</div>
+            <div class="logout-modal-actions">
+                <button type="button" class="logout-cancel-btn" id="logoutCancelBtn">Cancel</button>
+                <button type="button" class="logout-confirm-btn" id="logoutConfirmBtn">Log Out</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.classList.remove('open');
+    });
+
+    document.getElementById('logoutCancelBtn').addEventListener('click', () => {
+        modal.classList.remove('open');
+    });
+
+    document.getElementById('logoutConfirmBtn').addEventListener('click', async () => {
+        await logoutUser();
+        window.location.href = 'index.html';
+    });
+}
+
+
+
 
 function updateThemeIcon(theme) {
     const icon = document.querySelector('#themeToggle i');
