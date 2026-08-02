@@ -183,3 +183,25 @@ export async function deleteBuyerPayment(paymentId, saleId, amount) {
 
 
 
+export async function getBuyersWithDue() {
+    const { data: sales, error } = await supabase
+        .from('sales')
+        .select('buyer_id, gross_amount, amount_received, buyers(name)');
+
+    if (error) throw error;
+
+    const totals = {};
+    sales.forEach(s => {
+        if (!s.buyer_id) return;
+        if (!totals[s.buyer_id]) {
+            totals[s.buyer_id] = { id: s.buyer_id, name: s.buyers?.name || '-', outstanding_balance: 0 };
+        }
+        totals[s.buyer_id].outstanding_balance += Number(s.gross_amount) - Number(s.amount_received);
+    });
+
+    return Object.values(totals)
+        .filter(b => b.outstanding_balance > 0.5)
+        .sort((a, b) => b.outstanding_balance - a.outstanding_balance);
+}
+
+
