@@ -93,14 +93,20 @@ function renderSidebar(activePage) {
         }
     });
 
+
+    
+
     sidebar.innerHTML = `
         <div class="sidebar-header">
             <i class="fa-solid fa-warehouse"></i>
             <span>Rice Trading ERP</span>
         </div>
         <nav class="sidebar-nav">${navHtml}</nav>
+        <div class="sidebar-footer">Developed by Shohag</div>
     `;
 
+
+    
     // Expand/collapse submenu on toggle click
     sidebar.querySelectorAll('.nav-item-toggle').forEach(btn => {
         btn.addEventListener('click', () => {
