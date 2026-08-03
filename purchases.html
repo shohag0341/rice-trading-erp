@@ -209,6 +209,29 @@
     </div>
 </div>
 
+
+    <!-- Manage Varieties Modal -->
+<div class="modal-overlay" id="varietyModal">
+    <div class="modal-box" style="max-width:420px;">
+        <div class="modal-header">
+            <h3>Manage Paddy Varieties</h3>
+            <button class="modal-close" id="varietyModalClose"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group-modal">
+                <label>Add New Variety</label>
+                <div style="display:flex; gap:8px;">
+                    <input type="text" id="newVarietyName" placeholder="e.g. BRRI Dhan-29" style="flex:1;">
+                    <button type="button" class="btn-primary" id="saveNewVarietyBtn" style="padding:10px 14px; white-space:nowrap;">Add</button>
+                </div>
+            </div>
+            <div id="varietyManageList" style="margin-top:16px; max-height:320px; overflow-y:auto;">
+                <div class="table-empty"><i class="fa-solid fa-spinner fa-spin"></i></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="toast-container" id="toastContainer"></div>
 
 <script type="module" src="js/purchases.js"></script>
