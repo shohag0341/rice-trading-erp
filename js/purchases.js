@@ -70,16 +70,76 @@ function renderVarietyOptions(selectedId = '') {
     if (selectedId) varietySelect.value = selectedId;
 }
 
-// ---------- Add new paddy variety on the fly ----------
-document.getElementById('addVarietyBtn').addEventListener('click', async () => {
-    const name = prompt('Enter new paddy variety name:');
-    if (!name || !name.trim()) return;
+// ---------- Manage Paddy Varieties (add / activate / deactivate) ----------
+const varietyModal = document.getElementById('varietyModal');
+
+document.getElementById('addVarietyBtn').addEventListener('click', () => {
+    document.getElementById('newVarietyName').value = '';
+    varietyModal.classList.add('open');
+    loadVarietyManageList();
+});
+
+document.getElementById('varietyModalClose').addEventListener('click', () => varietyModal.classList.remove('open'));
+varietyModal.addEventListener('click', (e) => { if (e.target === varietyModal) varietyModal.classList.remove('open'); });
+
+async function loadVarietyManageList() {
+    const listEl = document.getElementById('varietyManageList');
+    listEl.innerHTML = `<div class="table-empty"><i class="fa-solid fa-spinner fa-spin"></i></div>`;
+
+    try {
+        const allVarieties = await getAllPaddyVarietiesIncludingInactive();
+
+        if (!allVarieties.length) {
+            listEl.innerHTML = `<div class="table-empty">No varieties yet.</div>`;
+            return;
+        }
+
+        listEl.innerHTML = allVarieties.map(v => `
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 4px; border-bottom:1px solid var(--border-color);">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-weight:600; font-size:14px;">${v.name}</span>
+                    ${!v.is_active ? '<span class="badge badge-danger">Inactive</span>' : ''}
+                </div>
+                <button type="button" class="btn-secondary toggle-variety-btn" data-id="${v.id}" data-active="${v.is_active}" style="padding:6px 12px; font-size:12px;">
+                    ${v.is_active ? 'Deactivate' : 'Activate'}
+                </button>
+            </div>
+        `).join('');
+
+        document.querySelectorAll('.toggle-variety-btn').forEach(btn => {
+            btn.addEventListener('click', () => handleToggleVariety(btn.dataset.id, btn.dataset.active === 'true'));
+        });
+    } catch (err) {
+        listEl.innerHTML = `<div class="table-empty">Could not load varieties.</div>`;
+    }
+}
+
+async function handleToggleVariety(id, isCurrentlyActive) {
+    try {
+        await setPaddyVarietyActive(id, !isCurrentlyActive);
+        showToast(isCurrentlyActive ? 'Variety deactivated.' : 'Variety activated.');
+        loadVarietyManageList();
+        varietiesList = await getPaddyVarietiesForDropdown();
+        renderVarietyOptions();
+    } catch (err) {
+        showToast('Failed: ' + err.message, 'error');
+    }
+}
+
+document.getElementById('saveNewVarietyBtn').addEventListener('click', async () => {
+    const name = document.getElementById('newVarietyName').value.trim();
+    if (!name) {
+        showToast('Enter a variety name.', 'error');
+        return;
+    }
 
     try {
         const newVariety = await createPaddyVariety(name);
         varietiesList.push(newVariety);
         renderVarietyOptions(newVariety.id);
+        document.getElementById('newVarietyName').value = '';
         showToast(`"${newVariety.name}" added successfully.`);
+        loadVarietyManageList();
     } catch (err) {
         showToast('Failed to add variety: ' + err.message, 'error');
     }
