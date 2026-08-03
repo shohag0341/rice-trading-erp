@@ -5,6 +5,12 @@ import {
     getStockForWarehouseVariety, deleteDamagedStock
 } from './services/inventory-service.js';
 import { getWarehousesForDropdown, getPaddyVarietiesForDropdown } from './services/purchase-service.js';
+import { makeSearchable } from './components/searchable-select.js';
+
+let damageWarehouseWidget, damageVarietyWidget;
+
+
+
 
 await initLayout('inventory');
 
@@ -174,14 +180,48 @@ async function loadDamagedStock() {
     }
 }
 
+
+
+
+function confirmDelete(message) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('deleteConfirmModal');
+        document.getElementById('deleteConfirmMessage').textContent = message;
+        modal.classList.add('open');
+
+        const yesBtn = document.getElementById('deleteConfirmYesBtn');
+        const cancelBtn = document.getElementById('deleteConfirmCancelBtn');
+        const closeBtn = document.getElementById('deleteConfirmClose');
+
+        function cleanup(result) {
+            modal.classList.remove('open');
+            yesBtn.removeEventListener('click', onYes);
+            cancelBtn.removeEventListener('click', onCancel);
+            closeBtn.removeEventListener('click', onCancel);
+            resolve(result);
+        }
+        function onYes() { cleanup(true); }
+        function onCancel() { cleanup(false); }
+
+        yesBtn.addEventListener('click', onYes);
+        cancelBtn.addEventListener('click', onCancel);
+        closeBtn.addEventListener('click', onCancel);
+    });
+}
+
 async function handleDeleteDamage(damageId) {
     const record = allDamagedRecords.find(d => d.id === damageId);
     if (!record) return;
 
     const isGain = record.adjustment_type === 'gain';
-    if (!confirm(`Delete this ${isGain ? 'gain' : 'loss'} record (${fmt(record.weight_kg)} KG)? This will reverse the stock change.`)) return;
+    const confirmed = await confirmDelete(`Delete this ${isGain ? 'gain' : 'loss'} record (${fmt(record.weight_kg)} KG)? This will reverse the stock change.`);
+    if (!confirmed) return;
 
     try {
+
+
+
+        
         await deleteDamagedStock(
             record.id,
             record.warehouse_id,
@@ -205,6 +245,9 @@ function getSelectedAdjustmentType() {
     return document.querySelector('input[name="adjustmentType"]:checked')?.value || 'loss';
 }
 
+
+
+
 async function loadDamageDropdowns() {
     const [warehouses, varieties] = await Promise.all([
         getWarehousesForDropdown(),
@@ -216,7 +259,19 @@ async function loadDamageDropdowns() {
 
     document.getElementById('damageVariety').innerHTML = '<option value="">Select variety</option>' +
         varieties.map(v => `<option value="${v.id}">${v.name}</option>`).join('');
+
+    if (!damageWarehouseWidget) {
+        damageWarehouseWidget = makeSearchable('damageWarehouse', { placeholder: 'Search warehouse...' });
+        damageVarietyWidget = makeSearchable('damageVariety', { placeholder: 'Search variety...' });
+    } else {
+        damageWarehouseWidget.refresh();
+        damageVarietyWidget.refresh();
+    }
 }
+
+
+
+
 
 document.getElementById('addDamageBtn').addEventListener('click', () => {
     damageForm.reset();
@@ -225,8 +280,13 @@ document.getElementById('addDamageBtn').addEventListener('click', () => {
     document.getElementById('damageStockInfoBox').style.display = 'none';
     document.getElementById('damageWeightWarning').style.display = 'none';
     currentDamageAvailableStock = 0;
+    damageWarehouseWidget?.refresh();
+    damageVarietyWidget?.refresh();
     damageModal.classList.add('open');
 });
+
+
+
 
 document.getElementById('damageModalClose').addEventListener('click', () => damageModal.classList.remove('open'));
 document.getElementById('damageCancelBtn').addEventListener('click', () => damageModal.classList.remove('open'));
