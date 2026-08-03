@@ -1,9 +1,15 @@
 import { initLayout, getCurrentProfile } from './layout.js';
+
+
+
 import {
     getAllPurchases, createPurchase, updatePurchase, deletePurchase,
     getFarmersForDropdown, getWarehousesForDropdown, getPaddyVarietiesForDropdown,
-    generateInvoiceNumber, createPaddyVariety
+    generateInvoiceNumber, createPaddyVariety,
+    getAllPaddyVarietiesIncludingInactive, setPaddyVarietyActive
 } from './services/purchase-service.js';
+
+
 
 const KG_PER_MAUND = 40;
 
