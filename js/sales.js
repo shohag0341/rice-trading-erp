@@ -1,13 +1,17 @@
 import { initLayout, getCurrentProfile } from './layout.js';
-
-
+import {
+    getAllSales, createSale, updateSale, deleteSale,
+    getBuyersForDropdown, getAverageCostPerMaund, getAvailableStock,
+    generateSaleInvoiceNumber
+} from './services/sale-service.js';
 import {
     getWarehousesForDropdown, getPaddyVarietiesForDropdown, createPaddyVariety,
     getAllPaddyVarietiesIncludingInactive, setPaddyVarietyActive
 } from './services/purchase-service.js';
+import { makeSearchable } from './components/searchable-select.js';
 
+let buyerSearchWidget, warehouseSearchWidget, varietySearchWidget;
 
-import { getWarehousesForDropdown, getPaddyVarietiesForDropdown, createPaddyVariety } from './services/purchase-service.js';
 
 const KG_PER_MAUND = 40;
 
@@ -64,6 +68,16 @@ async function loadDropdowns() {
 
     renderVarietyOptions();
 
+    if (!buyerSearchWidget) {
+        buyerSearchWidget = makeSearchable('saleBuyer', { placeholder: 'Search buyer...' });
+        warehouseSearchWidget = makeSearchable('saleWarehouse', { placeholder: 'Search warehouse...' });
+        varietySearchWidget = makeSearchable('saleVariety', { placeholder: 'Search variety...' });
+    } else {
+        buyerSearchWidget.refresh();
+        warehouseSearchWidget.refresh();
+        varietySearchWidget.refresh();
+    }
+
     if (!buyersList.length || !warehousesList.length) {
         showToast('Please add at least one Buyer and one Warehouse before creating a sale.', 'error');
     }
@@ -74,8 +88,8 @@ function renderVarietyOptions(selectedId = '') {
     varietySelect.innerHTML = '<option value="">Select paddy variety</option>' +
         varietiesList.map(v => `<option value="${v.id}">${v.name}</option>`).join('');
     if (selectedId) varietySelect.value = selectedId;
+    varietySearchWidget?.refresh();
 }
-
 
 
 
@@ -339,7 +353,13 @@ async function openAddModal() {
     editingSaleId = null;
     modalTitle.textContent = 'New Sale';
     saleForm.reset();
+    buyerSearchWidget?.refresh();
+    warehouseSearchWidget?.refresh();
+    varietySearchWidget?.refresh();
     currentAvgCost = 0;
+
+
+    
     currentAvailableStock = 0;
     document.getElementById('stockInfoBox').style.display = 'none';
     document.getElementById('weightWarning').style.display = 'none';
@@ -369,18 +389,23 @@ async function openEditModal(id) {
     document.getElementById('saleLabour').value = sale.labour_cost;
     document.getElementById('saleCommission').value = sale.commission;
     document.getElementById('saleOther').value = sale.other_expenses;
+
+
+    
     document.getElementById('salePaymentMethod').value = sale.payment_method;
     document.getElementById('saleAmountReceived').value = sale.amount_received;
     document.getElementById('saleRemarks').value = sale.remarks || '';
 
-    
-    
-    
-    // Track the original cost recorded at the time of this sale.
-    // We do NOT call refreshStockAndCost() here — this sale's own stock-out
-    // movement already exists in the ledger, so a live lookup would (wrongly)
-    // reflect stock AFTER this sale instead of before it, often showing 0.
+    buyerSearchWidget?.refresh();
+    warehouseSearchWidget?.refresh();
+    varietySearchWidget?.refresh();
+
     currentAvgCost = Number(sale.avg_cost_per_maund || 0);
+
+
+
+
+    
     await showStoredStockInfo(sale.warehouse_id, sale.paddy_variety_id);
     updateCalculationPreview();
 
