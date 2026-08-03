@@ -1,9 +1,12 @@
 import { initLayout, getCurrentProfile } from './layout.js';
+
+
 import {
-    getAllSales, createSale, updateSale, deleteSale,
-    getBuyersForDropdown, getAverageCostPerMaund, getAvailableStock,
-    generateSaleInvoiceNumber
-} from './services/sale-service.js';
+    getWarehousesForDropdown, getPaddyVarietiesForDropdown, createPaddyVariety,
+    getAllPaddyVarietiesIncludingInactive, setPaddyVarietyActive
+} from './services/purchase-service.js';
+
+
 import { getWarehousesForDropdown, getPaddyVarietiesForDropdown, createPaddyVariety } from './services/purchase-service.js';
 
 const KG_PER_MAUND = 40;
