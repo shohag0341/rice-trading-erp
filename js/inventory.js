@@ -37,9 +37,6 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 });
 
 // ---------- Tab 1: Current Stock ----------
-
-
-
 async function loadCurrentStock() {
     const container = document.getElementById('stockCardsContainer');
     container.innerHTML = `<div class="table-empty"><i class="fa-solid fa-spinner fa-spin"></i> Loading stock...</div>`;
@@ -90,20 +87,17 @@ async function loadCurrentStock() {
     }
 }
 
-
-
-
 // ---------- Tab 2: Stock Movements ----------
 function formatMovementType(type) {
     const map = {
         purchase_in: 'Purchase In', sale_out: 'Sale Out', transfer_in: 'Transfer In',
-        transfer_out: 'Transfer Out', damage: 'Damage', adjustment: 'Adjustment'
+        transfer_out: 'Transfer Out', damage: 'Loss', adjustment: 'Gain'
     };
     return map[type] || type;
 }
 
 function movementBadgeClass(type) {
-    if (type === 'purchase_in' || type === 'transfer_in') return 'movement-in';
+    if (type === 'purchase_in' || type === 'transfer_in' || type === 'adjustment') return 'movement-in';
     if (type === 'sale_out' || type === 'transfer_out' || type === 'damage') return 'movement-out';
     return 'movement-neutral';
 }
@@ -137,26 +131,25 @@ async function loadMovements() {
     }
 }
 
-
-
-
-
-// ---------- Tab 3: Damaged Stock ----------
+// ---------- Tab 3: Stock Adjustments (Loss / Gain) ----------
 async function loadDamagedStock() {
     const tableBody = document.getElementById('damagedTableBody');
-    tableBody.innerHTML = `<tr><td colspan="7" class="table-empty"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="8" class="table-empty"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</td></tr>`;
 
     try {
         allDamagedRecords = await getDamagedStock();
 
         if (!allDamagedRecords.length) {
-            tableBody.innerHTML = `<tr><td colspan="7" class="table-empty">No damaged stock recorded.</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="8" class="table-empty">No stock adjustments recorded.</td></tr>`;
             return;
         }
 
-        tableBody.innerHTML = allDamagedRecords.map(d => `
+        tableBody.innerHTML = allDamagedRecords.map(d => {
+            const isGain = d.adjustment_type === 'gain';
+            return `
             <tr>
                 <td>${new Date(d.damage_date).toLocaleDateString('en-GB')}</td>
+                <td><span class="badge ${isGain ? 'badge-success' : 'badge-danger'}">${isGain ? 'Gain' : 'Loss'}</span></td>
                 <td>${d.warehouses?.name || '-'}</td>
                 <td>${d.paddy_varieties?.name || '-'}</td>
                 <td>${fmt(d.weight_kg)} KG</td>
@@ -169,15 +162,15 @@ async function loadDamagedStock() {
                         </button>
                     </div>
                 </td>
-            </tr>
-        `).join('');
+            </tr>`;
+        }).join('');
 
         document.querySelectorAll('.delete-damage-btn').forEach(btn => {
             btn.addEventListener('click', () => handleDeleteDamage(btn.dataset.id));
         });
     } catch (err) {
-        showToast('Failed to load damaged stock: ' + err.message, 'error');
-        tableBody.innerHTML = `<tr><td colspan="7" class="table-empty">Could not load data.</td></tr>`;
+        showToast('Failed to load stock adjustments: ' + err.message, 'error');
+        tableBody.innerHTML = `<tr><td colspan="8" class="table-empty">Could not load data.</td></tr>`;
     }
 }
 
@@ -185,7 +178,8 @@ async function handleDeleteDamage(damageId) {
     const record = allDamagedRecords.find(d => d.id === damageId);
     if (!record) return;
 
-    if (!confirm(`Delete this damage record (${fmt(record.weight_kg)} KG)? This will restore the stock.`)) return;
+    const isGain = record.adjustment_type === 'gain';
+    if (!confirm(`Delete this ${isGain ? 'gain' : 'loss'} record (${fmt(record.weight_kg)} KG)? This will reverse the stock change.`)) return;
 
     try {
         await deleteDamagedStock(
@@ -193,9 +187,9 @@ async function handleDeleteDamage(damageId) {
             record.warehouse_id,
             record.paddy_variety_id,
             Number(record.weight_kg),
-            record.damage_date
+            record.adjustment_type
         );
-        showToast('Damage record deleted and stock restored.');
+        showToast('Adjustment record deleted and stock reversed.');
         loadDamagedStock();
         loadCurrentStock();
     } catch (err) {
@@ -203,9 +197,13 @@ async function handleDeleteDamage(damageId) {
     }
 }
 
-// ---------- Damaged Stock Modal ----------
+// ---------- Stock Adjustment Modal ----------
 const damageModal = document.getElementById('damageModal');
 const damageForm = document.getElementById('damageForm');
+
+function getSelectedAdjustmentType() {
+    return document.querySelector('input[name="adjustmentType"]:checked')?.value || 'loss';
+}
 
 async function loadDamageDropdowns() {
     const [warehouses, varieties] = await Promise.all([
@@ -222,6 +220,7 @@ async function loadDamageDropdowns() {
 
 document.getElementById('addDamageBtn').addEventListener('click', () => {
     damageForm.reset();
+    document.querySelector('input[name="adjustmentType"][value="loss"]').checked = true;
     document.getElementById('damageDate').value = new Date().toISOString().split('T')[0];
     document.getElementById('damageStockInfoBox').style.display = 'none';
     document.getElementById('damageWeightWarning').style.display = 'none';
@@ -233,10 +232,18 @@ document.getElementById('damageModalClose').addEventListener('click', () => dama
 document.getElementById('damageCancelBtn').addEventListener('click', () => damageModal.classList.remove('open'));
 damageModal.addEventListener('click', (e) => { if (e.target === damageModal) damageModal.classList.remove('open'); });
 
+document.querySelectorAll('input[name="adjustmentType"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+        document.getElementById('damageWeightWarning').style.display = 'none';
+        refreshDamageStockInfo();
+    });
+});
+
 async function refreshDamageStockInfo() {
     const warehouseId = document.getElementById('damageWarehouse').value;
     const varietyId = document.getElementById('damageVariety').value;
     const infoBox = document.getElementById('damageStockInfoBox');
+    const isGain = getSelectedAdjustmentType() === 'gain';
 
     if (!warehouseId || !varietyId) {
         infoBox.style.display = 'none';
@@ -251,7 +258,7 @@ async function refreshDamageStockInfo() {
         const stock = await getStockForWarehouseVariety(warehouseId, varietyId);
         currentDamageAvailableStock = Number(stock.current_weight_kg || 0);
 
-        const color = currentDamageAvailableStock <= 0 ? 'var(--color-danger)' : 'var(--text-primary)';
+        const color = (!isGain && currentDamageAvailableStock <= 0) ? 'var(--color-danger)' : 'var(--text-primary)';
         infoBox.innerHTML = `<i class="fa-solid fa-boxes-stacked"></i> Available in warehouse: <strong style="color:${color};">${fmt(currentDamageAvailableStock)} KG</strong>`;
 
         validateDamageWeight();
@@ -261,12 +268,19 @@ async function refreshDamageStockInfo() {
 }
 
 function validateDamageWeight() {
-    const weight = parseFloat(document.getElementById('damageWeight').value) || 0;
+    const isGain = getSelectedAdjustmentType() === 'gain';
     const warningBox = document.getElementById('damageWeightWarning');
+
+    if (isGain) {
+        warningBox.style.display = 'none';
+        return;
+    }
+
+    const weight = parseFloat(document.getElementById('damageWeight').value) || 0;
 
     if (weight > currentDamageAvailableStock) {
         warningBox.style.display = 'block';
-        warningBox.textContent = `Cannot record ${fmt(weight)} KG damage — only ${fmt(currentDamageAvailableStock)} KG available in this warehouse for this variety.`;
+        warningBox.textContent = `Cannot record ${fmt(weight)} KG loss — only ${fmt(currentDamageAvailableStock)} KG available in this warehouse for this variety.`;
     } else {
         warningBox.style.display = 'none';
     }
@@ -279,7 +293,11 @@ document.getElementById('damageWeight').addEventListener('input', validateDamage
 damageForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
+    const adjustmentType = getSelectedAdjustmentType();
+    const isGain = adjustmentType === 'gain';
+
     const damageData = {
+        adjustment_type: adjustmentType,
         warehouse_id: document.getElementById('damageWarehouse').value,
         paddy_variety_id: document.getElementById('damageVariety').value,
         weight_kg: parseFloat(document.getElementById('damageWeight').value) || 0,
@@ -293,8 +311,8 @@ damageForm.addEventListener('submit', async (e) => {
         return;
     }
 
-    if (damageData.weight_kg > currentDamageAvailableStock) {
-        showToast(`Cannot record damage: only ${fmt(currentDamageAvailableStock)} KG available in stock for this warehouse/variety.`, 'error');
+    if (!isGain && damageData.weight_kg > currentDamageAvailableStock) {
+        showToast(`Cannot record loss: only ${fmt(currentDamageAvailableStock)} KG available in stock for this warehouse/variety.`, 'error');
         return;
     }
 
@@ -305,7 +323,7 @@ damageForm.addEventListener('submit', async (e) => {
     try {
         const profile = getCurrentProfile();
         await createDamagedStock(damageData, profile?.id);
-        showToast('Damaged stock recorded successfully.');
+        showToast(`Stock ${isGain ? 'gain' : 'loss'} recorded successfully.`);
         damageModal.classList.remove('open');
         loadDamagedStock();
         loadCurrentStock();
@@ -320,4 +338,3 @@ damageForm.addEventListener('submit', async (e) => {
 // ---------- Init ----------
 await loadDamageDropdowns();
 loadCurrentStock();
-                             
