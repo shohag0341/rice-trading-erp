@@ -1,6 +1,7 @@
+
 import { initLayout } from './layout.js';
 import {
-    getTodaySummary, getCashBalance, getCurrentStockTotal,
+    getTodaySummary, getCashBalance, getCurrentStockTotal, getTotalStockValue,
     getMonthlyTrend, getTopFarmers, getTopBuyers, getWarehouseUtilization
 } from './services/dashboard-service.js';
 
@@ -12,18 +13,22 @@ const fmtStock = (num) => new Intl.NumberFormat('en-BD', { maximumFractionDigits
 
 async function loadDashboard() {
     try {
-        const [today, cash, stockTotal, trend, farmers, buyers, warehouses] = await Promise.all([
+        const [today, cash, stockTotal, stockValue, trend, farmers, buyers, warehouses] = await Promise.all([
             getTodaySummary(),
             getCashBalance(),
             getCurrentStockTotal(),
+            getTotalStockValue(),
             getMonthlyTrend(),
             getTopFarmers(5),
             getTopBuyers(5),
             getWarehouseUtilization()
         ]);
 
-        renderStatCards(today, cash, stockTotal);
+        renderStatCards(today, cash, stockTotal, stockValue);
         renderTrendChart(trend);
+
+
+        
         renderWarehouseList(warehouses);
         renderTopFarmers(farmers);
         renderTopBuyers(buyers);
@@ -37,7 +42,7 @@ async function loadDashboard() {
 
 
 
-function renderStatCards(today, cash, stockTotal) {
+function renderStatCards(today, cash, stockTotal, stockValue) {
     const grid = document.getElementById('statsGrid');
     grid.innerHTML = `
         <div class="stat-card" style="cursor:pointer;" onclick="window.location.href='reports.html?type=purchase&range=today'">
@@ -64,7 +69,7 @@ function renderStatCards(today, cash, stockTotal) {
 
             
             <div class="stat-card-value">${fmtStock(stockTotal)}</div>
-            <div class="stat-card-sub">Maund across all warehouses</div>
+            <div class="stat-card-sub">৳${fmt(stockValue)} total value</div>
 
 
             
