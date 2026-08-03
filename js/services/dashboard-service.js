@@ -1,5 +1,6 @@
 // Fetches data from the dashboard/analytics views created in the database
 import { supabase } from './supabase-client.js';
+import { getAverageCostPerMaund } from './sale-service.js';
 
 export async function getTodaySummary() {
     const today = new Date().toISOString().split('T')[0];
@@ -49,4 +50,22 @@ export async function getWarehouseUtilization() {
     const { data, error } = await supabase.from('warehouse_utilization').select('*');
     if (error) throw error;
     return data;
+}
+
+
+// ---------- Total value of all current stock (quantity × avg cost, per warehouse+variety) ----------
+export async function getTotalStockValue() {
+    const { data, error } = await supabase
+        .from('current_stock')
+        .select('warehouse_id, paddy_variety_id, current_maund');
+
+    if (error) throw error;
+
+    const stockedRows = data.filter(row => Number(row.current_maund) > 0);
+
+    const costs = await Promise.all(
+        stockedRows.map(row => getAverageCostPerMaund(row.warehouse_id, row.paddy_variety_id).catch(() => 0))
+    );
+
+    return stockedRows.reduce((sum, row, i) => sum + (Number(row.current_maund) * costs[i]), 0);
 }
