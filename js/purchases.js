@@ -2,12 +2,16 @@ import { initLayout, getCurrentProfile } from './layout.js';
 
 
 
+import { initLayout, getCurrentProfile } from './layout.js';
 import {
     getAllPurchases, createPurchase, updatePurchase, deletePurchase,
     getFarmersForDropdown, getWarehousesForDropdown, getPaddyVarietiesForDropdown,
     generateInvoiceNumber, createPaddyVariety,
     getAllPaddyVarietiesIncludingInactive, setPaddyVarietyActive
 } from './services/purchase-service.js';
+import { makeSearchable } from './components/searchable-select.js';
+
+let farmerSearchWidget, warehouseSearchWidget, varietySearchWidget;
 
 
 
