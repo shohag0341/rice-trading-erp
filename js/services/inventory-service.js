@@ -2,6 +2,7 @@
 import { supabase } from './supabase-client.js';
 
 // ---------- Current stock, grouped by warehouse ----------
+
 export async function getCurrentStockByWarehouse() {
     const { data, error } = await supabase
         .from('current_stock')
@@ -23,6 +24,7 @@ export async function getCurrentStockByWarehouse() {
         }
         if (Number(row.current_maund) > 0) {
             grouped[row.warehouse_id].varieties.push({
+                variety_id: row.paddy_variety_id,
                 variety_name: row.variety_name,
                 maund: Number(row.current_maund)
             });
@@ -32,6 +34,10 @@ export async function getCurrentStockByWarehouse() {
 
     return Object.values(grouped);
 }
+
+
+
+
 
 // ---------- Stock movement history (ledger) ----------
 export async function getStockMovements(filters = {}) {
