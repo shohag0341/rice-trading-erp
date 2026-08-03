@@ -158,3 +158,25 @@ export async function createPaddyVariety(name) {
     if (error) throw error;
     return data;
 }
+
+
+
+
+export async function getAllPaddyVarietiesIncludingInactive() {
+    const { data, error } = await supabase
+        .from('paddy_varieties')
+        .select('*')
+        .order('name');
+
+    if (error) throw error;
+    return data;
+}
+
+export async function setPaddyVarietyActive(id, isActive) {
+    const { error } = await supabase
+        .from('paddy_varieties')
+        .update({ is_active: isActive })
+        .eq('id', id);
+
+    if (error) throw error;
+}
