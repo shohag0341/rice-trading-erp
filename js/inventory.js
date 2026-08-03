@@ -239,6 +239,12 @@ document.querySelectorAll('input[name="adjustmentType"]').forEach(radio => {
     });
 });
 
+
+
+
+
+let currentDamageAvgCost = 0;
+
 async function refreshDamageStockInfo() {
     const warehouseId = document.getElementById('damageWarehouse').value;
     const varietyId = document.getElementById('damageVariety').value;
@@ -248,6 +254,7 @@ async function refreshDamageStockInfo() {
     if (!warehouseId || !varietyId) {
         infoBox.style.display = 'none';
         currentDamageAvailableStock = 0;
+        currentDamageAvgCost = 0;
         return;
     }
 
@@ -257,15 +264,29 @@ async function refreshDamageStockInfo() {
     try {
         const stock = await getStockForWarehouseVariety(warehouseId, varietyId);
         currentDamageAvailableStock = Number(stock.current_weight_kg || 0);
+        currentDamageAvgCost = await getAverageCostPerMaund(warehouseId, varietyId);
 
         const color = (!isGain && currentDamageAvailableStock <= 0) ? 'var(--color-danger)' : 'var(--text-primary)';
-        infoBox.innerHTML = `<i class="fa-solid fa-boxes-stacked"></i> Available in warehouse: <strong style="color:${color};">${fmt(currentDamageAvailableStock)} KG</strong>`;
+        infoBox.innerHTML = `<i class="fa-solid fa-boxes-stacked"></i> Available in warehouse: <strong style="color:${color};">${fmt(currentDamageAvailableStock)} KG</strong> &nbsp;|&nbsp; Avg cost: <strong>৳${fmt(currentDamageAvgCost)}/Md</strong>`;
 
         validateDamageWeight();
+        autoFillEstimatedValue();
     } catch (err) {
         infoBox.innerHTML = 'Could not check stock.';
     }
 }
+
+function autoFillEstimatedValue() {
+    const weightKg = parseFloat(document.getElementById('damageWeight').value) || 0;
+    if (weightKg <= 0 || currentDamageAvgCost <= 0) return;
+
+    const estimatedValue = (weightKg / 40) * currentDamageAvgCost;
+    document.getElementById('damageLoss').value = estimatedValue.toFixed(2);
+}
+
+
+
+
 
 function validateDamageWeight() {
     const isGain = getSelectedAdjustmentType() === 'gain';
@@ -288,7 +309,13 @@ function validateDamageWeight() {
 
 document.getElementById('damageWarehouse').addEventListener('change', refreshDamageStockInfo);
 document.getElementById('damageVariety').addEventListener('change', refreshDamageStockInfo);
-document.getElementById('damageWeight').addEventListener('input', validateDamageWeight);
+
+
+
+document.getElementById('damageWeight').addEventListener('input', () => {
+    validateDamageWeight();
+    autoFillEstimatedValue();
+});
 
 damageForm.addEventListener('submit', async (e) => {
     e.preventDefault();
