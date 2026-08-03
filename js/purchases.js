@@ -83,12 +83,19 @@ async function loadDropdowns() {
     }
 }
 
+
+
+
+
 function renderVarietyOptions(selectedId = '') {
     const varietySelect = document.getElementById('purchaseVariety');
     varietySelect.innerHTML = '<option value="">Select paddy variety</option>' +
         varietiesList.map(v => `<option value="${v.id}">${v.name}</option>`).join('');
     if (selectedId) varietySelect.value = selectedId;
+    varietySearchWidget?.refresh();
 }
+
+
 
 // ---------- Manage Paddy Varieties (add / activate / deactivate) ----------
 const varietyModal = document.getElementById('varietyModal');
