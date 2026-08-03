@@ -2,7 +2,6 @@
 import { supabase } from './supabase-client.js';
 
 // ---------- Current stock, grouped by warehouse ----------
-
 export async function getCurrentStockByWarehouse() {
     const { data, error } = await supabase
         .from('current_stock')
@@ -35,10 +34,6 @@ export async function getCurrentStockByWarehouse() {
     return Object.values(grouped);
 }
 
-
-
-
-
 // ---------- Stock movement history (ledger) ----------
 export async function getStockMovements(filters = {}) {
     let query = supabase
@@ -55,7 +50,7 @@ export async function getStockMovements(filters = {}) {
     return data;
 }
 
-// ---------- Damaged stock ----------
+// ---------- Stock adjustments (loss/damage or gain/surplus) ----------
 export async function getDamagedStock() {
     const { data, error } = await supabase
         .from('damaged_stock')
@@ -67,7 +62,9 @@ export async function getDamagedStock() {
 }
 
 export async function createDamagedStock(damageData, userId) {
-    // 1. Record the damage
+    const isGain = damageData.adjustment_type === 'gain';
+
+    // 1. Record the adjustment
     const { data, error } = await supabase
         .from('damaged_stock')
         .insert([{ ...damageData, created_by: userId }])
@@ -76,14 +73,16 @@ export async function createDamagedStock(damageData, userId) {
 
     if (error) throw error;
 
-    // 2. Also create a negative stock movement so current_stock reflects the loss
+    // 2. Also create a stock movement so current_stock reflects the change.
+    //    Loss -> negative weight, movement_type 'damage' (kept for backward compatibility with existing data)
+    //    Gain -> positive weight, movement_type 'adjustment'
     const { error: movementError } = await supabase
         .from('stock_movements')
         .insert([{
             warehouse_id: damageData.warehouse_id,
             paddy_variety_id: damageData.paddy_variety_id,
-            movement_type: 'damage',
-            weight_kg: -damageData.weight_kg,
+            movement_type: isGain ? 'adjustment' : 'damage',
+            weight_kg: isGain ? damageData.weight_kg : -damageData.weight_kg,
             remarks: damageData.reason,
             created_by: userId
         }]);
@@ -93,12 +92,7 @@ export async function createDamagedStock(damageData, userId) {
     return data;
 }
 
-
-
-
-
-
-// ---------- Get available stock for a specific warehouse + variety (used for damage validation) ----------
+// ---------- Get available stock for a specific warehouse + variety (used for loss validation) ----------
 export async function getStockForWarehouseVariety(warehouseId, varietyId) {
     const { data, error } = await supabase
         .from('current_stock')
@@ -111,14 +105,8 @@ export async function getStockForWarehouseVariety(warehouseId, varietyId) {
     return data || { current_maund: 0, current_weight_kg: 0 };
 }
 
-
-
-
-
-
-
-// ---------- Delete damaged stock record (also reverses the stock movement) ----------
-export async function deleteDamagedStock(damageId, warehouseId, varietyId, weightKg, damageDate) {
+// ---------- Delete a stock adjustment record (also reverses the stock movement) ----------
+export async function deleteDamagedStock(damageId, warehouseId, varietyId, weightKg, adjustmentType) {
     // 1. Delete the damaged_stock record
     const { error: deleteError } = await supabase
         .from('damaged_stock')
@@ -127,14 +115,18 @@ export async function deleteDamagedStock(damageId, warehouseId, varietyId, weigh
 
     if (deleteError) throw deleteError;
 
-    // 2. Find and delete the matching stock_movements entry to reverse the stock reduction
+    // 2. Find and delete the matching stock_movements entry to reverse the change
+    const isGain = adjustmentType === 'gain';
+    const movementType = isGain ? 'adjustment' : 'damage';
+    const movementWeight = isGain ? weightKg : -weightKg;
+
     const { data: movements, error: findError } = await supabase
         .from('stock_movements')
         .select('id')
         .eq('warehouse_id', warehouseId)
         .eq('paddy_variety_id', varietyId)
-        .eq('movement_type', 'damage')
-        .eq('weight_kg', -weightKg)
+        .eq('movement_type', movementType)
+        .eq('weight_kg', movementWeight)
         .order('created_at', { ascending: false })
         .limit(1);
 
@@ -149,6 +141,3 @@ export async function deleteDamagedStock(damageId, warehouseId, varietyId, weigh
         if (movementDeleteError) throw movementDeleteError;
     }
 }
-
-
-
