@@ -281,10 +281,14 @@ function renderTable(purchases) {
 }
 
 // ---------- Modal open/close ----------
+
 async function openAddModal() {
     editingPurchaseId = null;
     modalTitle.textContent = 'New Purchase';
     purchaseForm.reset();
+    farmerSearchWidget?.refresh();
+    warehouseSearchWidget?.refresh();
+    varietySearchWidget?.refresh();
 
     document.getElementById('purchaseDate').value = new Date().toISOString().split('T')[0];
     document.getElementById('purchaseInvoiceNo').value = await generateInvoiceNumber();
@@ -305,6 +309,11 @@ function openEditModal(id) {
     document.getElementById('purchaseFarmer').value = purchase.farmer_id;
     document.getElementById('purchaseWarehouse').value = purchase.warehouse_id;
     document.getElementById('purchaseVariety').value = purchase.paddy_variety_id;
+    farmerSearchWidget?.refresh();
+    warehouseSearchWidget?.refresh();
+    varietySearchWidget?.refresh();
+
+    
     document.getElementById('purchaseWeight').value = purchase.weight_kg;
     document.getElementById('purchaseMoisture').value = purchase.moisture_percent || '';
     document.getElementById('purchasePrice').value = purchase.price_per_maund;
