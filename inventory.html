@@ -37,7 +37,7 @@
                     <i class="fa-solid fa-right-left"></i> Stock Movements
                 </button>
                 <button class="tab-btn" data-tab="damagedTab">
-                    <i class="fa-solid fa-triangle-exclamation"></i> Damaged Stock
+                    <i class="fa-solid fa-scale-balanced"></i> Stock Adjustment
                 </button>
             </div>
 
@@ -60,22 +60,22 @@
                 </div>
             </div>
 
-            <!-- Tab 3: Damaged Stock -->
+            <!-- Tab 3: Stock Adjustment (Loss / Gain) -->
             <div class="tab-panel" id="damagedTab">
                 <div class="toolbar">
                     <div></div>
                     <button class="btn-primary" id="addDamageBtn">
-                        <i class="fa-solid fa-plus"></i> Record Damage
+                        <i class="fa-solid fa-plus"></i> Record Adjustment
                     </button>
                 </div>
 
                 <div class="data-table-wrapper">
                     <table>
                         <thead>
-                            <tr><th>Date</th><th>Warehouse</th><th>Variety</th><th>Weight</th><th>Est. Loss</th><th>Reason</th><th>Actions</th></tr>
+                            <tr><th>Date</th><th>Type</th><th>Warehouse</th><th>Variety</th><th>Weight</th><th>Value (৳)</th><th>Reason</th><th>Actions</th></tr>
                         </thead>
                         <tbody id="damagedTableBody">
-                            <tr><td colspan="7" class="table-empty">Loading...</td></tr>
+                            <tr><td colspan="8" class="table-empty">Loading...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -84,16 +84,28 @@
     </div>
 </div>
 
-<!-- Damaged Stock Modal -->
+<!-- Stock Adjustment Modal -->
 <div class="modal-overlay" id="damageModal">
     <div class="modal-box">
         <div class="modal-header">
-            <h3>Record Damaged Stock</h3>
+            <h3>Record Stock Adjustment</h3>
             <button class="modal-close" id="damageModalClose"><i class="fa-solid fa-xmark"></i></button>
         </div>
 
         <form id="damageForm">
             <div class="modal-body">
+                <div class="form-group-modal">
+                    <label>Adjustment Type *</label>
+                    <div class="form-row" style="gap:16px;">
+                        <label style="display:flex; align-items:center; gap:6px; font-weight:500; font-size:14px; cursor:pointer;">
+                            <input type="radio" name="adjustmentType" value="loss" checked> Loss (কমেছে)
+                        </label>
+                        <label style="display:flex; align-items:center; gap:6px; font-weight:500; font-size:14px; cursor:pointer;">
+                            <input type="radio" name="adjustmentType" value="gain"> Gain (বেশি পাওয়া গেছে)
+                        </label>
+                    </div>
+                </div>
+
                 <div class="form-group-modal">
                     <label for="damageWarehouse">Warehouse *</label>
                     <select id="damageWarehouse" required><option value="">Loading...</option></select>
@@ -119,13 +131,13 @@
                 <div id="damageWeightWarning" style="display:none; color:var(--color-danger); font-size:12px; margin:-8px 0 12px; font-weight:600;"></div>
 
                 <div class="form-group-modal">
-                    <label for="damageLoss">Estimated Loss (৳)</label>
+                    <label for="damageLoss">Estimated Value (৳)</label>
                     <input type="number" id="damageLoss" step="0.01" min="0" value="0">
                 </div>
 
                 <div class="form-group-modal">
                     <label for="damageReason">Reason</label>
-                    <textarea id="damageReason" rows="2" placeholder="e.g. Water damage, pest infestation"></textarea>
+                    <textarea id="damageReason" rows="2" placeholder="e.g. Water damage, or extra weight found during unloading"></textarea>
                 </div>
             </div>
 
@@ -141,6 +153,4 @@
 
 <script type="module" src="js/inventory.js"></script>
 </body>
-</html>
-
-
+    </html>
