@@ -8,6 +8,7 @@ import {
 await initLayout('dashboard');
 
 const fmt = (num) => new Intl.NumberFormat('en-BD').format(Math.round(num || 0));
+const fmtStock = (num) => new Intl.NumberFormat('en-BD', { maximumFractionDigits: 2 }).format(num || 0);
 
 async function loadDashboard() {
     try {
@@ -60,8 +61,13 @@ function renderStatCards(today, cash, stockTotal) {
         <div class="stat-card" style="cursor:pointer;" onclick="window.location.href='inventory.html'">
             <div class="stat-card-icon bg-orange"><i class="fa-solid fa-boxes-stacked"></i></div>
             <div class="stat-card-label">Current Stock</div>
-            <div class="stat-card-value">${fmt(stockTotal)}</div>
+
+            
+            <div class="stat-card-value">${fmtStock(stockTotal)}</div>
             <div class="stat-card-sub">Maund across all warehouses</div>
+
+
+            
         </div>
         <div class="stat-card" style="cursor:pointer;" onclick="window.location.href='cash-adjustments.html'">
             <div class="stat-card-icon bg-red"><i class="fa-solid fa-wallet"></i></div>
