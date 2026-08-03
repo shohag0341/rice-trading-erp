@@ -1,4 +1,5 @@
 import { initLayout, getCurrentProfile } from './layout.js';
+import { getAverageCostPerMaund } from './services/sale-service.js';
 import {
     getCurrentStockByWarehouse, getStockMovements, getDamagedStock, createDamagedStock,
     getStockForWarehouseVariety, deleteDamagedStock
@@ -36,6 +37,9 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 });
 
 // ---------- Tab 1: Current Stock ----------
+
+
+
 async function loadCurrentStock() {
     const container = document.getElementById('stockCardsContainer');
     container.innerHTML = `<div class="table-empty"><i class="fa-solid fa-spinner fa-spin"></i> Loading stock...</div>`;
@@ -48,6 +52,17 @@ async function loadCurrentStock() {
             return;
         }
 
+        // Fetch current avg cost/maund for every warehouse+variety combo that has stock
+        for (const w of warehouseStocks) {
+            await Promise.all(w.varieties.map(async (v) => {
+                try {
+                    v.avg_cost = await getAverageCostPerMaund(w.warehouse_id, v.variety_id);
+                } catch (e) {
+                    v.avg_cost = 0;
+                }
+            }));
+        }
+
         container.innerHTML = `<div class="inventory-summary-cards">` +
             warehouseStocks.map(w => `
                 <div class="stock-card">
@@ -57,7 +72,13 @@ async function loadCurrentStock() {
                     ${w.varieties.length ? `
                         <div class="variety-breakdown">
                             ${w.varieties.map(v => `
-                                <div class="variety-row"><span>${v.variety_name}</span><strong>${fmt(v.maund)} Md</strong></div>
+                                <div class="variety-row">
+                                    <span>${v.variety_name}</span>
+                                    <span style="text-align:right;">
+                                        <strong>${fmt(v.maund)} Md</strong>
+                                        <div style="font-size:11px; color:var(--text-secondary); font-weight:500;">৳${fmt(v.avg_cost)}/Md</div>
+                                    </span>
+                                </div>
                             `).join('')}
                         </div>
                     ` : `<div class="variety-breakdown" style="color:var(--text-secondary); font-size:12px;">No stock yet</div>`}
@@ -68,6 +89,9 @@ async function loadCurrentStock() {
         container.innerHTML = `<div class="table-empty">Could not load stock data.</div>`;
     }
 }
+
+
+
 
 // ---------- Tab 2: Stock Movements ----------
 function formatMovementType(type) {
@@ -112,6 +136,10 @@ async function loadMovements() {
         tableBody.innerHTML = `<tr><td colspan="5" class="table-empty">Could not load data.</td></tr>`;
     }
 }
+
+
+
+
 
 // ---------- Tab 3: Damaged Stock ----------
 async function loadDamagedStock() {
