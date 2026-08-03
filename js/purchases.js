@@ -1,8 +1,4 @@
 import { initLayout, getCurrentProfile } from './layout.js';
-
-
-
-import { initLayout, getCurrentProfile } from './layout.js';
 import {
     getAllPurchases, createPurchase, updatePurchase, deletePurchase,
     getFarmersForDropdown, getWarehousesForDropdown, getPaddyVarietiesForDropdown,
