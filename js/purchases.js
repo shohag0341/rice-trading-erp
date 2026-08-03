@@ -68,6 +68,16 @@ async function loadDropdowns() {
 
     renderVarietyOptions();
 
+    if (!farmerSearchWidget) {
+        farmerSearchWidget = makeSearchable('purchaseFarmer', { placeholder: 'Search farmer...' });
+        warehouseSearchWidget = makeSearchable('purchaseWarehouse', { placeholder: 'Search warehouse...' });
+        varietySearchWidget = makeSearchable('purchaseVariety', { placeholder: 'Search variety...' });
+    } else {
+        farmerSearchWidget.refresh();
+        warehouseSearchWidget.refresh();
+        varietySearchWidget.refresh();
+    }
+
     if (!farmersList.length || !warehousesList.length) {
         showToast('Please add at least one Farmer and one Warehouse before creating a purchase.', 'error');
     }
