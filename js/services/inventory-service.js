@@ -141,3 +141,17 @@ export async function deleteDamagedStock(damageId, warehouseId, varietyId, weigh
         if (movementDeleteError) throw movementDeleteError;
     }
 }
+
+
+// ---------- Total value of Loss adjustments in a date range (for P&L deduction) ----------
+export async function getInventoryLossesForPeriod(startDate, endDate) {
+    const { data, error } = await supabase
+        .from('damaged_stock')
+        .select('estimated_loss')
+        .eq('adjustment_type', 'loss')
+        .gte('damage_date', startDate)
+        .lte('damage_date', endDate);
+
+    if (error) throw error;
+    return data.reduce((sum, row) => sum + Number(row.estimated_loss || 0), 0);
+}
