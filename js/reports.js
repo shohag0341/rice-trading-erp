@@ -337,8 +337,15 @@ async function renderProfitReport() {
                 <div class="calc-row"><span>Total Revenue (Sales)</span><span>৳${fmt(report.totalRevenue)}</span></div>
                 <div class="calc-row"><span>Cost of Goods Sold</span><span>- ৳${fmt(report.totalCogs)}</span></div>
                 <div class="calc-row total"><span>Gross Profit</span><span>৳${fmt(report.grossProfit)}</span></div>
+               
+                
+                
                 <div class="calc-row"><span>Operating Expenses</span><span>- ৳${fmt(report.totalExpenses)}</span></div>
+                <div class="calc-row"><span>Inventory Losses (drying/damage)</span><span>- ৳${fmt(report.totalInventoryLoss)}</span></div>
                 <div class="calc-row total" style="color:${report.netProfit >= 0 ? 'var(--color-accent)' : 'var(--color-danger)'}"><span>Net Profit</span><span>৳${fmt(report.netProfit)}</span></div>
+
+
+                
             </div>
         </div>
 
