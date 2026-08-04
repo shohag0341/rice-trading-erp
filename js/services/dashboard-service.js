@@ -1,20 +1,33 @@
 // Fetches data from the dashboard/analytics views created in the database
 import { supabase } from './supabase-client.js';
 import { getAverageCostPerMaund } from './sale-service.js';
+import { getInventoryLossesForPeriod } from './inventory-service.js';
+
+
+
 
 export async function getTodaySummary() {
     const today = new Date().toISOString().split('T')[0];
 
-    const [purchaseRes, salesRes] = await Promise.all([
+    const [purchaseRes, salesRes, todaysLoss] = await Promise.all([
         supabase.from('daily_purchase_summary').select('*').eq('purchase_date', today).maybeSingle(),
-        supabase.from('daily_sales_summary').select('*').eq('sale_date', today).maybeSingle()
+        supabase.from('daily_sales_summary').select('*').eq('sale_date', today).maybeSingle(),
+        getInventoryLossesForPeriod(today, today)
     ]);
+
+    const sales = salesRes.data || { total_net_amount: 0, total_profit: 0, total_maund: 0 };
+    sales.total_profit = Number(sales.total_profit || 0) - todaysLoss;
 
     return {
         purchase: purchaseRes.data || { total_net_cost: 0, total_maund: 0 },
-        sales: salesRes.data || { total_net_amount: 0, total_profit: 0, total_maund: 0 }
+        sales
     };
 }
+
+
+
+
+
 
 export async function getCashBalance() {
     const { data, error } = await supabase.from('cash_flow_summary').select('*').maybeSingle();
