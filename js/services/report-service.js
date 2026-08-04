@@ -1,6 +1,6 @@
 // Handles fetching filtered report data for Purchases, Sales, Expenses, Profit
 import { supabase } from './supabase-client.js';
-
+import { getInventoryLossesForPeriod } from './inventory-service.js';
 
 
 
@@ -49,20 +49,24 @@ export async function getExpenseReport(startDate, endDate) {
 }
 
 // Profit report combines sales (revenue) and purchases+expenses (cost) for the period
+
 export async function getProfitReport(startDate, endDate) {
-    const [sales, expenses] = await Promise.all([
+    const [sales, expenses, totalInventoryLoss] = await Promise.all([
         getSalesReport(startDate, endDate),
-        getExpenseReport(startDate, endDate)
+        getExpenseReport(startDate, endDate),
+        getInventoryLossesForPeriod(startDate, endDate)
     ]);
 
     const totalRevenue = sales.reduce((sum, s) => sum + Number(s.net_amount), 0);
     const totalCogs = sales.reduce((sum, s) => sum + (Number(s.maund) * Number(s.avg_cost_per_maund)), 0);
     const totalExpenses = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
     const grossProfit = totalRevenue - totalCogs;
-    const netProfit = grossProfit - totalExpenses;
+    const netProfit = grossProfit - totalExpenses - totalInventoryLoss;
 
-    return { sales, expenses, totalRevenue, totalCogs, totalExpenses, grossProfit, netProfit };
+    return { sales, expenses, totalRevenue, totalCogs, totalExpenses, totalInventoryLoss, grossProfit, netProfit };
 }
+
+
 
 // Utility: get ISO date string ranges for quick filters
 export function getDateRange(rangeType) {
