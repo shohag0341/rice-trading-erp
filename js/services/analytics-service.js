@@ -2,19 +2,28 @@
 import { supabase } from './supabase-client.js';
 
 // ---------- Date-range based summary (avg prices, profit per maund, turnover) ----------
+
+
+
+
 export async function getAnalyticsSummary(startDate, endDate) {
-    const [purchasesRes, salesRes] = await Promise.all([
+    const [purchasesRes, salesRes, lossesRes] = await Promise.all([
         supabase.from('purchases').select('maund, price_per_maund, gross_amount')
             .gte('purchase_date', startDate).lte('purchase_date', endDate),
         supabase.from('sales').select('maund, selling_price_per_maund, gross_amount, net_profit')
-            .gte('sale_date', startDate).lte('sale_date', endDate)
+            .gte('sale_date', startDate).lte('sale_date', endDate),
+        supabase.from('damaged_stock').select('estimated_loss')
+            .eq('adjustment_type', 'loss')
+            .gte('damage_date', startDate).lte('damage_date', endDate)
     ]);
 
     if (purchasesRes.error) throw purchasesRes.error;
     if (salesRes.error) throw salesRes.error;
+    if (lossesRes.error) throw lossesRes.error;
 
     const purchases = purchasesRes.data;
     const sales = salesRes.data;
+    const totalInventoryLoss = lossesRes.data.reduce((s, l) => s + Number(l.estimated_loss || 0), 0);
 
     const totalPurchaseMaund = purchases.reduce((s, p) => s + Number(p.maund), 0);
     const totalPurchaseAmount = purchases.reduce((s, p) => s + Number(p.gross_amount), 0);
@@ -24,7 +33,7 @@ export async function getAnalyticsSummary(startDate, endDate) {
     const totalSalesAmount = sales.reduce((s, x) => s + Number(x.gross_amount), 0);
     const avgSellingPrice = totalSalesMaund > 0 ? totalSalesAmount / totalSalesMaund : 0;
 
-    const totalProfit = sales.reduce((s, x) => s + Number(x.net_profit), 0);
+    const totalProfit = sales.reduce((s, x) => s + Number(x.net_profit), 0) - totalInventoryLoss;
     const profitPerMaund = totalSalesMaund > 0 ? totalProfit / totalSalesMaund : 0;
 
     // Simple inventory turnover: how much of what was purchased has been sold (in this period)
@@ -32,9 +41,13 @@ export async function getAnalyticsSummary(startDate, endDate) {
 
     return {
         avgPurchasePrice, avgSellingPrice, profitPerMaund,
-        totalPurchaseMaund, totalSalesMaund, inventoryTurnover, totalProfit
+        totalPurchaseMaund, totalSalesMaund, inventoryTurnover, totalProfit, totalInventoryLoss
     };
 }
+
+
+
+
 
 // ---------- All-time "Best" leaderboards (reuse existing views) ----------
 export async function getBestVillage() {
@@ -79,29 +92,38 @@ export async function getTopVarieties(limit = 5) {
 
 
 // ---------- Variety-wise breakdown, filtered by date range ----------
-export async function getVarietyBreakdown(startDate, endDate) {
-    const [purchasesRes, salesRes, varietiesRes] = await Promise.all([
+
+    export async function getVarietyBreakdown(startDate, endDate) {
+    const [purchasesRes, salesRes, varietiesRes, lossesRes] = await Promise.all([
         supabase.from('purchases')
             .select('paddy_variety_id, maund, price_per_maund, gross_amount, paddy_varieties(name)')
             .gte('purchase_date', startDate).lte('purchase_date', endDate),
         supabase.from('sales')
             .select('paddy_variety_id, maund, selling_price_per_maund, gross_amount, net_profit, paddy_varieties(name)')
             .gte('sale_date', startDate).lte('sale_date', endDate),
-        supabase.from('paddy_varieties').select('id, name').eq('is_active', true)
+        supabase.from('paddy_varieties').select('id, name').eq('is_active', true),
+        supabase.from('damaged_stock').select('paddy_variety_id, estimated_loss')
+            .eq('adjustment_type', 'loss')
+            .gte('damage_date', startDate).lte('damage_date', endDate)
     ]);
 
     if (purchasesRes.error) throw purchasesRes.error;
     if (salesRes.error) throw salesRes.error;
     if (varietiesRes.error) throw varietiesRes.error;
+    if (lossesRes.error) throw lossesRes.error;
 
     const purchases = purchasesRes.data;
     const sales = salesRes.data;
     const varieties = varietiesRes.data;
+    const losses = lossesRes.data;
 
     // Build a breakdown per variety
     const breakdown = varieties.map(v => {
         const varietyPurchases = purchases.filter(p => p.paddy_variety_id === v.id);
         const varietySales = sales.filter(s => s.paddy_variety_id === v.id);
+        const varietyLoss = losses
+            .filter(l => l.paddy_variety_id === v.id)
+            .reduce((s, l) => s + Number(l.estimated_loss || 0), 0);
 
         const purchaseMaund = varietyPurchases.reduce((s, p) => s + Number(p.maund), 0);
         const purchaseAmount = varietyPurchases.reduce((s, p) => s + Number(p.gross_amount), 0);
@@ -111,7 +133,7 @@ export async function getVarietyBreakdown(startDate, endDate) {
         const salesAmount = varietySales.reduce((s, x) => s + Number(x.gross_amount), 0);
         const avgSellingPrice = salesMaund > 0 ? salesAmount / salesMaund : 0;
 
-        const totalProfit = varietySales.reduce((s, x) => s + Number(x.net_profit), 0);
+        const totalProfit = varietySales.reduce((s, x) => s + Number(x.net_profit), 0) - varietyLoss;
         const profitPerMaund = salesMaund > 0 ? totalProfit / salesMaund : 0;
 
         return {
@@ -121,6 +143,9 @@ export async function getVarietyBreakdown(startDate, endDate) {
             totalProfit, profitPerMaund
         };
     });
+
+
+    
 
     // Only show varieties that had some activity in this period
     return breakdown.filter(b => b.purchaseMaund > 0 || b.salesMaund > 0);
