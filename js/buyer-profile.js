@@ -3,6 +3,7 @@ import {
     getBuyerById, getBuyerSalesHistory, getBuyerTotals, recordBuyerPayment,
     getBuyerPaymentsList, deleteBuyerPayment
 } from './services/buyer-service.js';
+import { confirmAction } from './components/confirm-modal.js';
 
 await initLayout('buyers');
 
@@ -168,7 +169,12 @@ function renderRecentPayments(payments) {
 }
 
 async function handleDeletePayment(paymentId, saleId, amount) {
-    if (!confirm(`Delete this payment of ৳${fmt(amount)}? The sale's due amount will increase back.`)) return;
+    const confirmed = await confirmAction({
+        title: 'Delete Payment?',
+        message: `Delete this payment of ৳${fmt(amount)}? The sale's due amount will increase back.`,
+        confirmText: 'Delete'
+    });
+    if (!confirmed) return;
 
     try {
         await deleteBuyerPayment(paymentId, saleId, amount);
@@ -223,4 +229,3 @@ document.getElementById('paymentForm').addEventListener('submit', async (e) => {
 });
 
 loadProfile();
-        
