@@ -9,6 +9,7 @@ import {
     getAllPaddyVarietiesIncludingInactive, setPaddyVarietyActive
 } from './services/purchase-service.js';
 import { makeSearchable } from './components/searchable-select.js';
+import { confirmAction } from './components/confirm-modal.js';
 
 let buyerSearchWidget, warehouseSearchWidget, varietySearchWidget;
 
@@ -329,7 +330,7 @@ function renderTable(sales) {
 
     document.querySelectorAll('.edit-btn').forEach(btn => btn.addEventListener('click', () => openEditModal(btn.dataset.id)));
     document.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', () => handleDelete(btn.dataset.id)));
-                                                                                 }
+}
 
 
 // "Full Received" quick button — fills amount_received with exactly the gross (buyer's) amount
@@ -504,7 +505,13 @@ async function handleFormSubmit(e) {
 
 async function handleDelete(id) {
     const sale = allSales.find(s => s.id === id);
-    if (!confirm(`Delete sale "${sale?.invoice_no}"? This cannot be undone.`)) return;
+
+    const confirmed = await confirmAction({
+        title: 'Delete Sale?',
+        message: `Delete sale "${sale?.invoice_no}"? This cannot be undone.`,
+        confirmText: 'Delete'
+    });
+    if (!confirmed) return;
 
     try {
         await deleteSale(id);
@@ -533,4 +540,3 @@ modalOverlay.addEventListener('click', (e) => {
 // ---------- Init ----------
 await loadDropdowns();
 loadSales();
-
