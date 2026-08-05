@@ -6,6 +6,7 @@ import {
     getAllPaddyVarietiesIncludingInactive, setPaddyVarietyActive
 } from './services/purchase-service.js';
 import { makeSearchable } from './components/searchable-select.js';
+import { confirmAction } from './components/confirm-modal.js';
 
 let farmerSearchWidget, warehouseSearchWidget, varietySearchWidget;
 
@@ -388,7 +389,13 @@ async function handleFormSubmit(e) {
 
 async function handleDelete(id) {
     const purchase = allPurchases.find(p => p.id === id);
-    if (!confirm(`Delete purchase "${purchase?.invoice_no}"? This cannot be undone.`)) return;
+
+    const confirmed = await confirmAction({
+        title: 'Delete Purchase?',
+        message: `Delete purchase "${purchase?.invoice_no}"? This cannot be undone.`,
+        confirmText: 'Delete'
+    });
+    if (!confirmed) return;
 
     try {
         await deletePurchase(id);
@@ -417,4 +424,5 @@ modalOverlay.addEventListener('click', (e) => {
 // ---------- Init ----------
 await loadDropdowns();
 loadPurchases();
+
     
