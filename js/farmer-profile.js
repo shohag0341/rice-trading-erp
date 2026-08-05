@@ -6,6 +6,7 @@ import {
     getFarmerById, getFarmerPurchaseHistory, getFarmerTotals, recordFarmerPayment,
     getFarmerPaymentsList, deleteFarmerPayment
 } from './services/farmer-service.js';
+import { confirmAction } from './components/confirm-modal.js';
 
 
 import { getCurrentProfile } from './layout.js';
@@ -177,7 +178,12 @@ function renderRecentPayments(payments) {
 }
 
 async function handleDeletePayment(paymentId, purchaseId, amount) {
-    if (!confirm(`Delete this payment of ৳${fmt(amount)}? The purchase's due amount will increase back.`)) return;
+    const confirmed = await confirmAction({
+        title: 'Delete Payment?',
+        message: `Delete this payment of ৳${fmt(amount)}? The purchase's due amount will increase back.`,
+        confirmText: 'Delete'
+    });
+    if (!confirmed) return;
 
     try {
         await deleteFarmerPayment(paymentId, purchaseId, amount);
@@ -233,3 +239,4 @@ document.getElementById('paymentForm').addEventListener('submit', async (e) => {
 });
 
 loadProfile();
+                                              
