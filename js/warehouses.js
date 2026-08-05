@@ -3,6 +3,7 @@ import {
     getAllWarehouses, createWarehouse, updateWarehouse,
     deleteWarehouse, getWarehouseUtilizationMap
 } from './services/warehouse-service.js';
+import { confirmAction } from './components/confirm-modal.js';
 
 await initLayout('warehouses');
 
@@ -159,7 +160,13 @@ async function handleFormSubmit(e) {
 
 async function handleDelete(id) {
     const warehouse = allWarehouses.find(w => w.id === id);
-    if (!confirm(`Delete warehouse "${warehouse?.name}"? This cannot be undone.`)) return;
+
+    const confirmed = await confirmAction({
+        title: 'Delete Warehouse?',
+        message: `Delete warehouse "${warehouse?.name}"? This cannot be undone.`,
+        confirmText: 'Delete'
+    });
+    if (!confirmed) return;
 
     try {
         await deleteWarehouse(id);
