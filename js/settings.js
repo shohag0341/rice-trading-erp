@@ -3,6 +3,7 @@ import {
     getBusinessSettings, updateBusinessSettings,
     getAllUsers, updateUserRole, toggleUserActiveStatus
 } from './services/settings-service.js';
+import { confirmAction } from './components/confirm-modal.js';
 
 const currentUserProfile = await initLayout('settings');
 
@@ -142,7 +143,14 @@ function renderUsersTable(users) {
 
 async function handleRoleChange(userId, newRole) {
     const user = allUsers.find(u => u.id === userId);
-    if (!confirm(`Change ${user?.full_name}'s role to "${formatRole(newRole)}"?`)) {
+
+    const confirmed = await confirmAction({
+        title: 'Change Role?',
+        message: `Change ${user?.full_name}'s role to "${formatRole(newRole)}"?`,
+        confirmText: 'Change Role',
+        danger: false
+    });
+    if (!confirmed) {
         loadUsers();
         return;
     }
@@ -161,7 +169,13 @@ async function handleStatusToggle(userId, currentlyActive) {
     const user = allUsers.find(u => u.id === userId);
     const action = currentlyActive ? 'deactivate' : 'activate';
 
-    if (!confirm(`Are you sure you want to ${action} ${user?.full_name}?`)) return;
+    const confirmed = await confirmAction({
+        title: currentlyActive ? 'Deactivate User?' : 'Activate User?',
+        message: `Are you sure you want to ${action} ${user?.full_name}?`,
+        confirmText: currentlyActive ? 'Deactivate' : 'Activate',
+        danger: currentlyActive
+    });
+    if (!confirmed) return;
 
     try {
         await toggleUserActiveStatus(userId, !currentlyActive);
@@ -175,4 +189,3 @@ async function handleStatusToggle(userId, currentlyActive) {
 // ---------- Init ----------
 loadBusinessSettings();
 loadUsers();
-
