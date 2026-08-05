@@ -1,5 +1,6 @@
 import { initLayout, getCurrentProfile } from './layout.js';
 import { getAllCashAdjustments, createCashAdjustment, deleteCashAdjustment } from './services/cash-service.js';
+import { confirmAction } from './components/confirm-modal.js';
 
 await initLayout('cash-adjustments');
 
@@ -136,7 +137,12 @@ async function handleFormSubmit(e) {
 }
 
 async function handleDelete(id) {
-    if (!confirm('Delete this record? This will affect your cash balance calculation.')) return;
+    const confirmed = await confirmAction({
+        title: 'Delete Record?',
+        message: 'Delete this record? This will affect your cash balance calculation.',
+        confirmText: 'Delete'
+    });
+    if (!confirmed) return;
 
     try {
         await deleteCashAdjustment(id);
@@ -154,3 +160,4 @@ adjustmentForm.addEventListener('submit', handleFormSubmit);
 modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
 
 loadAdjustments();
+        
