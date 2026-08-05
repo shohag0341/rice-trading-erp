@@ -1,5 +1,6 @@
 import { initLayout, getCurrentProfile } from './layout.js';
 import { getAllBuyers, createBuyer, updateBuyer, deleteBuyer } from './services/buyer-service.js';
+import { confirmAction } from './components/confirm-modal.js';
 
 await initLayout('buyers');
 
@@ -161,7 +162,13 @@ async function handleFormSubmit(e) {
 
 async function handleDelete(id) {
     const buyer = allBuyers.find(b => b.id === id);
-    if (!confirm(`Delete buyer "${buyer?.name}"? This cannot be undone.`)) return;
+
+    const confirmed = await confirmAction({
+        title: 'Delete Buyer?',
+        message: `Delete buyer "${buyer?.name}"? This cannot be undone.`,
+        confirmText: 'Delete'
+    });
+    if (!confirmed) return;
 
     try {
         await deleteBuyer(id);
@@ -187,3 +194,4 @@ modalOverlay.addEventListener('click', (e) => {
 });
 
 loadBuyers();
+        
