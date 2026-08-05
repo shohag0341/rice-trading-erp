@@ -1,5 +1,6 @@
 import { initLayout, getCurrentProfile } from './layout.js';
 import { getAllFarmers, createFarmer, updateFarmer, deleteFarmer } from './services/farmer-service.js';
+import { confirmAction } from './components/confirm-modal.js';
 
 await initLayout('farmers');
 
@@ -156,7 +157,13 @@ async function handleFormSubmit(e) {
 
 async function handleDelete(id) {
     const farmer = allFarmers.find(f => f.id === id);
-    if (!confirm(`Delete farmer "${farmer?.name}"? This cannot be undone.`)) return;
+
+    const confirmed = await confirmAction({
+        title: 'Delete Farmer?',
+        message: `Delete farmer "${farmer?.name}"? This cannot be undone.`,
+        confirmText: 'Delete'
+    });
+    if (!confirmed) return;
 
     try {
         await deleteFarmer(id);
