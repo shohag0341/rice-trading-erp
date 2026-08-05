@@ -1,6 +1,7 @@
 import { initLayout, getCurrentProfile } from './layout.js';
 import { getAllExpenses, createExpense, updateExpense, deleteExpense } from './services/expense-service.js';
 import { getWarehousesForDropdown } from './services/purchase-service.js';
+import { confirmAction } from './components/confirm-modal.js';
 
 await initLayout('expenses');
 
@@ -160,7 +161,12 @@ async function handleFormSubmit(e) {
 }
 
 async function handleDelete(id) {
-    if (!confirm('Delete this expense record? This cannot be undone.')) return;
+    const confirmed = await confirmAction({
+        title: 'Delete Expense?',
+        message: 'Delete this expense record? This cannot be undone.',
+        confirmText: 'Delete'
+    });
+    if (!confirmed) return;
 
     try {
         await deleteExpense(id);
