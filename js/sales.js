@@ -10,6 +10,7 @@ import {
 } from './services/purchase-service.js';
 import { makeSearchable } from './components/searchable-select.js';
 import { confirmAction } from './components/confirm-modal.js';
+import { formatDate } from './utils/date-format.js';
 
 let buyerSearchWidget, warehouseSearchWidget, varietySearchWidget;
 
@@ -199,9 +200,10 @@ async function refreshStockAndCost() {
         currentAvgCost = avgCost;
 
         const stockColor = currentAvailableStock <= 0 ? 'var(--color-danger)' : 'var(--text-primary)';
+        const stockKg = currentAvailableStock * KG_PER_MAUND;
         stockInfoBox.innerHTML = `
             <i class="fa-solid fa-boxes-stacked"></i>
-            Available Stock: <strong style="color:${stockColor};">${fmt(currentAvailableStock)} Maund</strong>
+            Available Stock: <strong style="color:${stockColor};">${fmt(currentAvailableStock)} Maund</strong> <span style="color:var(--text-secondary);">(${fmt(stockKg)} KG)</span>
             &nbsp;|&nbsp; Avg. Purchase Cost: <strong>৳${fmt(currentAvgCost)}/Maund</strong>
         `;
 
@@ -312,7 +314,7 @@ function renderTable(sales) {
         return `
         <tr>
             <td><span class="invoice-badge">${s.invoice_no}</span></td>
-            <td>${new Date(s.sale_date).toLocaleDateString('en-GB')}</td>
+            <td>${formatDate(s.sale_date)}</td>
             <td>${s.buyers?.name || '-'}</td>
             <td>${s.paddy_varieties?.name || '-'}</td>
             <td>${fmt(s.maund)} Md</td>
@@ -429,10 +431,11 @@ async function showStoredStockInfo(warehouseId, varietyId) {
     try {
         const stock = await getAvailableStock(warehouseId, varietyId);
         currentAvailableStock = Number(stock.current_maund || 0);
+        const stockKg = currentAvailableStock * KG_PER_MAUND;
 
         stockInfoBox.innerHTML = `
             <i class="fa-solid fa-boxes-stacked"></i>
-            Available Stock now: <strong>${fmt(currentAvailableStock)} Maund</strong>
+            Available Stock now: <strong>${fmt(currentAvailableStock)} Maund</strong> <span style="color:var(--text-secondary);">(${fmt(stockKg)} KG)</span>
             &nbsp;|&nbsp; Cost recorded for this sale: <strong>৳${fmt(currentAvgCost)}/Maund</strong>
         `;
     } catch (err) {
@@ -471,7 +474,7 @@ async function handleFormSubmit(e) {
         remarks: document.getElementById('saleRemarks').value.trim(),
     };
 
-     if (!saleData.invoice_no) {
+    if (!saleData.invoice_no) {
         showToast('Invoice No is required.', 'error');
         return;
     }
