@@ -4,6 +4,7 @@ import {
     getAllUsers, updateUserRole, toggleUserActiveStatus
 } from './services/settings-service.js';
 import { confirmAction } from './components/confirm-modal.js';
+import { formatDate } from './utils/date-format.js';
 
 const currentUserProfile = await initLayout('settings');
 
@@ -126,7 +127,7 @@ function renderUsersTable(users) {
                     </button>
                 ` : `<span class="badge ${u.is_active ? 'badge-success' : 'badge-danger'}">${u.is_active ? 'Active' : 'Inactive'}</span>`}
             </td>
-            <td>${new Date(u.created_at).toLocaleDateString('en-GB')}</td>
+            <td>${formatDate(u.created_at)}</td>
         </tr>
     `).join('');
 
