@@ -7,6 +7,7 @@ import {
 } from './services/purchase-service.js';
 import { makeSearchable } from './components/searchable-select.js';
 import { confirmAction } from './components/confirm-modal.js';
+import { formatDate } from './utils/date-format.js';
 
 let farmerSearchWidget, warehouseSearchWidget, varietySearchWidget;
 
@@ -258,7 +259,7 @@ function renderTable(purchases) {
     tableBody.innerHTML = purchases.map(p => `
         <tr>
             <td><span class="invoice-badge">${p.invoice_no}</span></td>
-            <td>${new Date(p.purchase_date).toLocaleDateString('en-GB')}</td>
+            <td>${formatDate(p.purchase_date)}</td>
             <td>${p.farmers?.name || '-'}</td>
             <td>${p.paddy_varieties?.name || '-'}</td>
             <td>${fmt(p.maund)} Md</td>
@@ -445,4 +446,3 @@ modalOverlay.addEventListener('click', (e) => {
 await loadDropdowns();
 loadPurchases();
 
-    
