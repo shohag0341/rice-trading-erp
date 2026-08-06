@@ -2,6 +2,7 @@ import { initLayout, getCurrentProfile } from './layout.js';
 import { getAllExpenses, createExpense, updateExpense, deleteExpense } from './services/expense-service.js';
 import { getWarehousesForDropdown } from './services/purchase-service.js';
 import { confirmAction } from './components/confirm-modal.js';
+import { formatDate } from './utils/date-format.js';
 
 await initLayout('expenses');
 
@@ -71,7 +72,7 @@ function renderTable(expenses) {
 
     tableBody.innerHTML = expenses.map(e => `
         <tr>
-            <td>${new Date(e.expense_date).toLocaleDateString('en-GB')}</td>
+            <td>${formatDate(e.expense_date)}</td>
             <td><span class="badge badge-success">${formatCategory(e.category)}</span></td>
             <td>${e.warehouses?.name || '-'}</td>
             <td>${e.description || '-'}</td>
