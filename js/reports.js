@@ -5,6 +5,7 @@ import {
 } from './services/report-service.js';
 import { recordFarmerPayment } from './services/farmer-service.js';
 import { recordBuyerPayment } from './services/buyer-service.js';
+import { formatDate } from './utils/date-format.js';
 
 
 await initLayout('reports');
@@ -155,7 +156,7 @@ async function renderPurchaseReport() {
                                 <span class="invoice-badge">${p.invoice_no}</span>
                                 ${due > 0 ? '<i class="fa-solid fa-triangle-exclamation" style="color:var(--color-danger); margin-left:6px;" title="Farmer has due"></i>' : ''}
                             </td>
-                            <td>${new Date(p.purchase_date).toLocaleDateString('en-GB')}</td>
+                            <td>${formatDate(p.purchase_date)}</td>
                             <td>${p.farmers?.name || '-'}</td>
                             <td>৳${fmt(p.transport_cost)}</td>
                             <td>৳${fmt(p.labour_cost)}</td>
@@ -236,7 +237,7 @@ async function renderSalesReport() {
                                 <span class="invoice-badge">${s.invoice_no}</span>
                                 ${due > 0 ? '<i class="fa-solid fa-triangle-exclamation" style="color:var(--color-danger); margin-left:6px;" title="Buyer owes payment"></i>' : ''}
                             </td>
-                            <td>${new Date(s.sale_date).toLocaleDateString('en-GB')}</td>
+                            <td>${formatDate(s.sale_date)}</td>
                             <td>${s.buyers?.name || '-'}</td>
                             <td>৳${fmt(s.net_amount)}</td>
                             <td style="color:${s.net_profit >= 0 ? 'var(--color-accent)' : 'var(--color-danger)'}; font-weight:700;">৳${fmt(s.net_profit)}</td>
@@ -288,7 +289,7 @@ async function renderExpenseReport() {
                 <tbody>
                     ${data.map(e => `
                         <tr>
-                            <td>${new Date(e.expense_date).toLocaleDateString('en-GB')}</td>
+                            <td>${formatDate(e.expense_date)}</td>
                             <td><span class="badge badge-success">${e.category}</span></td>
                             <td>${e.warehouses?.name || '-'}</td>
                             <td>${e.description || '-'}</td>
@@ -322,7 +323,7 @@ async function renderProfitReport() {
         return `
             <tr>
                 <td><span class="invoice-badge">${s.invoice_no}</span></td>
-                <td>${new Date(s.sale_date).toLocaleDateString('en-GB')}</td>
+                <td>${formatDate(s.sale_date)}</td>
                 <td>${s.buyers?.name || '-'}</td>
                 <td>৳${fmt(revenue)}</td>
                 <td>৳${fmt(cost)}</td>
@@ -493,5 +494,3 @@ if (urlReportType) {
 
 const targetRange = urlRange || 'month';
 document.querySelector(`.quick-range-btn[data-range="${targetRange}"]`).click();
-
-
