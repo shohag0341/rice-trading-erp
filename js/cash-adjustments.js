@@ -1,6 +1,7 @@
 import { initLayout, getCurrentProfile } from './layout.js';
 import { getAllCashAdjustments, createCashAdjustment, deleteCashAdjustment } from './services/cash-service.js';
 import { confirmAction } from './components/confirm-modal.js';
+import { formatDate } from './utils/date-format.js';
 
 await initLayout('cash-adjustments');
 
@@ -67,7 +68,7 @@ function renderTable(adjustments) {
 
     tableBody.innerHTML = adjustments.map(a => `
         <tr>
-            <td>${new Date(a.adjustment_date).toLocaleDateString('en-GB')}</td>
+            <td>${formatDate(a.adjustment_date)}</td>
             <td>
                 <span class="badge ${a.adjustment_type === 'cash_out' ? 'badge-danger' : 'badge-success'}">
                     ${a.adjustment_type === 'cash_out' ? 'Cash Out' : 'Cash Returned'}
@@ -160,4 +161,3 @@ adjustmentForm.addEventListener('submit', handleFormSubmit);
 modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
 
 loadAdjustments();
-        
