@@ -4,6 +4,7 @@ import {
     getBuyerPaymentsList, deleteBuyerPayment
 } from './services/buyer-service.js';
 import { confirmAction } from './components/confirm-modal.js';
+import { formatDate } from './utils/date-format.js';
 
 await initLayout('buyers');
 
@@ -109,7 +110,7 @@ function renderSalesHistory(history) {
                         return `
                         <tr>
                             <td><span class="invoice-badge">${s.invoice_no}</span></td>
-                            <td>${new Date(s.sale_date).toLocaleDateString('en-GB')}</td>
+                            <td>${formatDate(s.sale_date)}</td>
                             <td>${s.paddy_varieties?.name || '-'}</td>
                             <td>${fmt(s.maund)} Md</td>
                             <td>৳${fmt(s.selling_price_per_maund)}</td>
@@ -147,7 +148,7 @@ function renderRecentPayments(payments) {
                 <tbody>
                     ${payments.map(p => `
                         <tr>
-                            <td>${new Date(p.payment_date).toLocaleDateString('en-GB')}</td>
+                            <td>${formatDate(p.payment_date)}</td>
                             <td><span class="invoice-badge">${p.sales?.invoice_no || '-'}</span></td>
                             <td>৳${fmt(p.amount)}</td>
                             <td>${p.payment_method}</td>
@@ -229,3 +230,4 @@ document.getElementById('paymentForm').addEventListener('submit', async (e) => {
 });
 
 loadProfile();
+        
