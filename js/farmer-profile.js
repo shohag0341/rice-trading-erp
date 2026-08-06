@@ -7,6 +7,7 @@ import {
     getFarmerPaymentsList, deleteFarmerPayment
 } from './services/farmer-service.js';
 import { confirmAction } from './components/confirm-modal.js';
+import { formatDate } from './utils/date-format.js';
 
 
 import { getCurrentProfile } from './layout.js';
@@ -116,7 +117,7 @@ function renderPurchaseHistory(history) {
                         return `
                         <tr>
                             <td><span class="invoice-badge">${p.invoice_no}</span></td>
-                            <td>${new Date(p.purchase_date).toLocaleDateString('en-GB')}</td>
+                            <td>${formatDate(p.purchase_date)}</td>
                             <td>${p.paddy_varieties?.name || '-'}</td>
                             <td>${fmt(p.maund)} Md</td>
                             <td>৳${fmt(p.price_per_maund)}</td>
@@ -156,7 +157,7 @@ function renderRecentPayments(payments) {
                 <tbody>
                     ${payments.map(p => `
                         <tr>
-                            <td>${new Date(p.payment_date).toLocaleDateString('en-GB')}</td>
+                            <td>${formatDate(p.payment_date)}</td>
                             <td><span class="invoice-badge">${p.purchases?.invoice_no || '-'}</span></td>
                             <td>৳${fmt(p.amount)}</td>
                             <td>${p.payment_method}</td>
@@ -239,4 +240,3 @@ document.getElementById('paymentForm').addEventListener('submit', async (e) => {
 });
 
 loadProfile();
-                                              
