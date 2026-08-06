@@ -355,12 +355,32 @@ async function handleFormSubmit(e) {
         remarks: document.getElementById('purchaseRemarks').value.trim(),
     };
 
-    if (!purchaseData.farmer_id || !purchaseData.warehouse_id || !purchaseData.paddy_variety_id) {
-        showToast('Please select Farmer, Warehouse, and Paddy Variety.', 'error');
+    if (!purchaseData.invoice_no) {
+        showToast('Invoice No is required.', 'error');
+        return;
+    }
+    if (!purchaseData.purchase_date) {
+        showToast('Purchase Date is required.', 'error');
+        return;
+    }
+    if (!purchaseData.farmer_id) {
+        showToast('Please select a Farmer.', 'error');
+        return;
+    }
+    if (!purchaseData.warehouse_id) {
+        showToast('Please select a Warehouse.', 'error');
+        return;
+    }
+    if (!purchaseData.paddy_variety_id) {
+        showToast('Please select a Paddy Variety.', 'error');
         return;
     }
     if (purchaseData.weight_kg <= 0) {
         showToast('Weight must be greater than 0.', 'error');
+        return;
+    }
+    if (purchaseData.price_per_maund <= 0) {
+        showToast('Price Per Maund must be greater than 0.', 'error');
         return;
     }
 
