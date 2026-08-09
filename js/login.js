@@ -6,6 +6,15 @@ const loginBtnText = document.getElementById('loginBtnText');
 const errorText = document.getElementById('errorText');
 const forgotPasswordLink = document.getElementById('forgotPasswordLink');
 
+// Forgot Password modal elements
+const fpModalOverlay = document.getElementById('fpModalOverlay');
+const fpModalClose = document.getElementById('fpModalClose');
+const fpForm = document.getElementById('fpForm');
+const fpEmail = document.getElementById('fpEmail');
+const fpErrorText = document.getElementById('fpErrorText');
+const fpSendBtn = document.getElementById('fpSendBtn');
+const fpSendBtnText = document.getElementById('fpSendBtnText');
+
 // If already logged in, redirect straight to dashboard
 (async function checkExistingSession() {
     const session = await getCurrentSession();
@@ -60,16 +69,51 @@ loginForm.addEventListener('submit', async (e) => {
     }
 });
 
-forgotPasswordLink.addEventListener('click', async () => {
-    const email = document.getElementById('email').value.trim();
+// ---------- Forgot Password modal ----------
+function openForgotPasswordModal() {
+    fpForm.reset();
+    fpErrorText.style.display = 'none';
+
+    // Pre-fill with whatever email they'd already typed on the login form
+    const typedEmail = document.getElementById('email').value.trim();
+    if (typedEmail) fpEmail.value = typedEmail;
+
+    fpModalOverlay.classList.add('open');
+}
+
+function closeForgotPasswordModal() {
+    fpModalOverlay.classList.remove('open');
+}
+
+forgotPasswordLink.addEventListener('click', openForgotPasswordModal);
+fpModalClose.addEventListener('click', closeForgotPasswordModal);
+fpModalOverlay.addEventListener('click', (e) => {
+    if (e.target === fpModalOverlay) closeForgotPasswordModal();
+});
+
+fpForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    fpErrorText.style.display = 'none';
+
+    const email = fpEmail.value.trim();
     if (!email) {
-        showToast('Enter your email first, then click "Forgot Password".', 'warning');
+        fpErrorText.textContent = 'Please enter your email.';
+        fpErrorText.style.display = 'block';
         return;
     }
+
+    fpSendBtn.disabled = true;
+    fpSendBtnText.innerHTML = '<span class="spinner"></span> Sending...';
+
     try {
         await sendPasswordReset(email);
         showToast('Password reset email sent! Check your inbox.', 'success');
+        closeForgotPasswordModal();
     } catch (err) {
-        showToast(err.message || 'Could not send reset email.', 'error');
+        fpErrorText.textContent = err.message || 'Could not send reset email.';
+        fpErrorText.style.display = 'block';
+    } finally {
+        fpSendBtn.disabled = false;
+        fpSendBtnText.textContent = 'Send Reset Link';
     }
 });
