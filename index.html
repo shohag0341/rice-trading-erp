@@ -52,11 +52,39 @@
                 <label>
                     <input type="checkbox" id="rememberMe"> Remember Me
                 </label>
-                <a id="forgotPasswordLink">Forgot Password?</a>
+                <button type="button" id="forgotPasswordLink" class="link-btn">Forgot Password?</button>
             </div>
 
             <button type="submit" class="btn-login" id="loginBtn">
                 <span id="loginBtnText">Sign In</span>
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Forgot Password modal -->
+<div class="fp-modal-overlay" id="fpModalOverlay">
+    <div class="fp-modal-card">
+        <button type="button" class="fp-modal-close" id="fpModalClose"><i class="fa-solid fa-xmark"></i></button>
+
+        <div class="login-logo" style="margin-bottom:14px;">
+            <i class="fa-solid fa-key"></i>
+        </div>
+        <div class="login-title" style="font-size:18px;">Reset Your Password</div>
+        <div class="login-subtitle">Enter your account email — we'll send you a reset link</div>
+
+        <form id="fpForm">
+            <div class="form-group">
+                <label for="fpEmail">Email</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-envelope"></i>
+                    <input type="email" id="fpEmail" placeholder="you@example.com" required autocomplete="email">
+                </div>
+                <div class="error-text" id="fpErrorText"></div>
+            </div>
+
+            <button type="submit" class="btn-login" id="fpSendBtn">
+                <span id="fpSendBtnText">Send Reset Link</span>
             </button>
         </form>
     </div>
