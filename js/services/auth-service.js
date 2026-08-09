@@ -38,3 +38,10 @@ export async function sendPasswordReset(email) {
     });
     if (error) throw error;
 }
+
+// Sets a new password for the user currently in a password-recovery session
+// (i.e. after they've clicked the reset link from their email).
+export async function updatePassword(newPassword) {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) throw error;
+}
