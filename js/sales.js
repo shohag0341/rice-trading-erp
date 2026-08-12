@@ -11,6 +11,8 @@ import {
 import { makeSearchable } from './components/searchable-select.js';
 import { confirmAction } from './components/confirm-modal.js';
 import { formatDate } from './utils/date-format.js';
+import { printReceipt } from './components/receipt.js';
+import { getBusinessSettings } from './services/settings-service.js';
 
 let buyerSearchWidget, warehouseSearchWidget, varietySearchWidget;
 
@@ -323,6 +325,7 @@ function renderTable(sales) {
             <td><span class="badge ${paymentBadgeClass(s.payment_status)}">${s.payment_status}</span></td>
             <td>
                 <div class="action-btns">
+                    <button class="icon-btn print-btn" data-id="${s.id}" title="Print Receipt"><i class="fa-solid fa-print"></i></button>
                     <button class="icon-btn edit-btn" data-id="${s.id}" title="Edit"><i class="fa-solid fa-pen"></i></button>
                     <button class="icon-btn delete delete-btn" data-id="${s.id}" title="Delete"><i class="fa-solid fa-trash"></i></button>
                 </div>
@@ -330,6 +333,7 @@ function renderTable(sales) {
         </tr>`;
     }).join('');
 
+    document.querySelectorAll('.print-btn').forEach(btn => btn.addEventListener('click', () => handlePrintReceipt(btn.dataset.id)));
     document.querySelectorAll('.edit-btn').forEach(btn => btn.addEventListener('click', () => openEditModal(btn.dataset.id)));
     document.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', () => handleDelete(btn.dataset.id)));
 }
@@ -451,6 +455,8 @@ function closeModal() {
     editingSaleId = null;
 }
 
+
+
 // ---------- Form submit ----------
 async function handleFormSubmit(e) {
     e.preventDefault();
@@ -542,6 +548,49 @@ async function handleDelete(id) {
         loadSales(searchInput.value.trim());
     } catch (err) {
         showToast('Delete failed: ' + err.message, 'error');
+    }
+}
+
+async function handlePrintReceipt(id) {
+    const sale = allSales.find(s => s.id === id);
+    if (!sale) return;
+
+    try {
+        const business = await getBusinessSettings();
+        const due = Number(sale.gross_amount) - Number(sale.amount_received);
+
+        printReceipt({
+            businessName: business?.business_name || 'Rice Trading ERP Pro',
+            businessAddress: business?.address || '',
+            businessPhone: business?.phone || '',
+            title: 'Sale Receipt',
+            invoiceNo: sale.invoice_no,
+            date: formatDate(sale.sale_date),
+            partyLabel: 'Buyer',
+            partyName: sale.buyers?.name || '-',
+            partyPhone: sale.buyers?.phone || '',
+            warehouseName: sale.warehouses?.name || '-',
+            varietyName: sale.paddy_varieties?.name || '-',
+            weightKg: sale.weight_kg,
+            maund: sale.maund,
+            priceLabel: 'Selling Price/Maund',
+            pricePerMaund: sale.selling_price_per_maund,
+            grossAmount: sale.gross_amount,
+            costRows: [
+                { label: 'Transport', amount: sale.transport_cost },
+                { label: 'Labour', amount: sale.labour_cost },
+                { label: 'Commission', amount: sale.commission },
+                { label: 'Other', amount: sale.other_expenses }
+            ],
+            netLabel: 'Net Amount',
+            netAmount: sale.net_amount,
+            paidLabel: 'Amount Received',
+            amountPaid: sale.amount_received,
+            due: due,
+            remarks: sale.remarks || ''
+        });
+    } catch (err) {
+        showToast('Could not open receipt: ' + err.message, 'error');
     }
 }
 
