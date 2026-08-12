@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 <link rel="stylesheet" href="css/variables.css">
 <link rel="stylesheet" href="css/main.css">
@@ -33,6 +34,9 @@
                 </button>
                 <button class="settings-tab-btn" data-tab="usersTab">
                     <i class="fa-solid fa-users"></i> User Management
+                </button>
+                <button class="settings-tab-btn" data-tab="backupTab">
+                    <i class="fa-solid fa-cloud-arrow-down"></i> Backup & Export
                 </button>
             </div>
 
@@ -104,6 +108,23 @@
 
                 <div style="margin-top:16px; padding:14px 18px; background:rgba(37,99,235,0.08); border-radius:var(--radius-sm); font-size:12px; color:var(--text-secondary);">
                     <i class="fa-solid fa-circle-info"></i> To add a new user, go to your Supabase Dashboard → Authentication → Users → Add user. New users get "Staff" role by default and can be changed here.
+                </div>
+            </div>
+
+            <!-- Backup & Export Tab -->
+            <div class="settings-panel" id="backupTab">
+                <div class="card-box">
+                    <div class="card-box-title"><i class="fa-solid fa-cloud-arrow-down"></i> Download Full Backup</div>
+                    <p style="font-size:13px; color:var(--text-secondary); line-height:1.7; margin:4px 0 18px;">
+                        Downloads every record in your account — Farmers, Buyers, Warehouses, Purchases, Sales,
+                        Expenses, Cash Adjustments, Stock Adjustments, and all Payments — as a single Excel file
+                        with one sheet per module. Keep a copy of this saved somewhere safe (e.g. Google Drive)
+                        as an offline backup of your business data.
+                    </p>
+                    <button type="button" class="btn-primary" id="downloadBackupBtn">
+                        <i class="fa-solid fa-file-excel"></i> <span id="downloadBackupBtnText">Download Backup (Excel)</span>
+                    </button>
+                    <div id="backupStatusText" style="margin-top:12px; font-size:12px; color:var(--text-secondary);"></div>
                 </div>
             </div>
         </main>
