@@ -8,6 +8,8 @@ import {
 import { makeSearchable } from './components/searchable-select.js';
 import { confirmAction } from './components/confirm-modal.js';
 import { formatDate } from './utils/date-format.js';
+import { printReceipt } from './components/receipt.js';
+import { getBusinessSettings } from './services/settings-service.js';
 
 let farmerSearchWidget, warehouseSearchWidget, varietySearchWidget;
 
@@ -267,6 +269,7 @@ function renderTable(purchases) {
             <td><span class="badge ${paymentBadgeClass(p.payment_status)}">${p.payment_status}</span></td>
             <td>
                 <div class="action-btns">
+                    <button class="icon-btn print-btn" data-id="${p.id}" title="Print Receipt"><i class="fa-solid fa-print"></i></button>
                     <button class="icon-btn edit-btn" data-id="${p.id}" title="Edit"><i class="fa-solid fa-pen"></i></button>
                     <button class="icon-btn delete delete-btn" data-id="${p.id}" title="Delete"><i class="fa-solid fa-trash"></i></button>
                 </div>
@@ -274,6 +277,7 @@ function renderTable(purchases) {
         </tr>
     `).join('');
 
+    document.querySelectorAll('.print-btn').forEach(btn => btn.addEventListener('click', () => handlePrintReceipt(btn.dataset.id)));
     document.querySelectorAll('.edit-btn').forEach(btn => btn.addEventListener('click', () => openEditModal(btn.dataset.id)));
     document.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', () => handleDelete(btn.dataset.id)));
 }
@@ -427,6 +431,49 @@ async function handleDelete(id) {
     }
 }
 
+async function handlePrintReceipt(id) {
+    const purchase = allPurchases.find(p => p.id === id);
+    if (!purchase) return;
+
+    try {
+        const business = await getBusinessSettings();
+        const due = Number(purchase.gross_amount) - Number(purchase.amount_paid);
+
+        printReceipt({
+            businessName: business?.business_name || 'Rice Trading ERP Pro',
+            businessAddress: business?.address || '',
+            businessPhone: business?.phone || '',
+            title: 'Purchase Receipt',
+            invoiceNo: purchase.invoice_no,
+            date: formatDate(purchase.purchase_date),
+            partyLabel: 'Farmer',
+            partyName: purchase.farmers?.name || '-',
+            partyPhone: purchase.farmers?.phone || '',
+            warehouseName: purchase.warehouses?.name || '-',
+            varietyName: purchase.paddy_varieties?.name || '-',
+            weightKg: purchase.weight_kg,
+            maund: purchase.maund,
+            priceLabel: 'Price/Maund',
+            pricePerMaund: purchase.price_per_maund,
+            grossAmount: purchase.gross_amount,
+            costRows: [
+                { label: 'Transport', amount: purchase.transport_cost },
+                { label: 'Labour', amount: purchase.labour_cost },
+                { label: 'Food', amount: purchase.food_cost },
+                { label: 'Other', amount: purchase.other_expenses }
+            ],
+            netLabel: 'Net Cost',
+            netAmount: purchase.net_cost,
+            paidLabel: 'Amount Paid',
+            amountPaid: purchase.amount_paid,
+            due: due,
+            remarks: purchase.remarks || ''
+        });
+    } catch (err) {
+        showToast('Could not open receipt: ' + err.message, 'error');
+    }
+}
+
 // ---------- Events ----------
 let searchTimeout;
 searchInput.addEventListener('input', () => {
@@ -445,4 +492,4 @@ modalOverlay.addEventListener('click', (e) => {
 // ---------- Init ----------
 await loadDropdowns();
 loadPurchases();
-
+    
