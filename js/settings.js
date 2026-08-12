@@ -5,6 +5,7 @@ import {
 } from './services/settings-service.js';
 import { confirmAction } from './components/confirm-modal.js';
 import { formatDate } from './utils/date-format.js';
+import { getBackupData } from './services/backup-service.js';
 
 const currentUserProfile = await initLayout('settings');
 
@@ -187,6 +188,120 @@ async function handleStatusToggle(userId, currentlyActive) {
     }
 }
 
+// ---------- Backup & Export ----------
+const fmtNum = (num) => Number(num || 0);
+
+function buildBackupWorkbook(data) {
+    const wb = XLSX.utils.book_new();
+
+    const farmersSheet = data.farmers.map(f => ({
+        Name: f.name, Phone: f.phone || '', Village: f.village || '', Union: f.union_name || '',
+        District: f.district || '', NID: f.nid || '', Status: f.is_active ? 'Active' : 'Inactive',
+        Remarks: f.remarks || ''
+    }));
+
+    const buyersSheet = data.buyers.map(b => ({
+        Name: b.name, Type: b.buyer_type, Phone: b.phone || '', 'Contact Person': b.contact_person || '',
+        Address: b.address || '', Status: b.is_active ? 'Active' : 'Inactive', Remarks: b.remarks || ''
+    }));
+
+    const warehousesSheet = data.warehouses.map(w => ({
+        Name: w.name, Location: w.location || '', 'Capacity (Maund)': fmtNum(w.capacity_maund),
+        'Manager Name': w.manager_name || '', 'Manager Phone': w.manager_phone || ''
+    }));
+
+    const varietiesSheet = data.varieties.map(v => ({
+        Name: v.name, Status: v.is_active ? 'Active' : 'Inactive'
+    }));
+
+    const purchasesSheet = data.purchases.map(p => ({
+        Invoice: p.invoice_no, Date: formatDate(p.purchase_date), Farmer: p.farmers?.name || '',
+        Warehouse: p.warehouses?.name || '', Variety: p.paddy_varieties?.name || '',
+        'Weight (KG)': fmtNum(p.weight_kg), Maund: fmtNum(p.maund), 'Price/Maund': fmtNum(p.price_per_maund),
+        Transport: fmtNum(p.transport_cost), Labour: fmtNum(p.labour_cost), Food: fmtNum(p.food_cost),
+        Other: fmtNum(p.other_expenses), 'Net Cost': fmtNum(p.net_cost), 'Payment Method': p.payment_method,
+        'Payment Status': p.payment_status, 'Amount Paid': fmtNum(p.amount_paid), Remarks: p.remarks || ''
+    }));
+
+    const salesSheet = data.sales.map(s => ({
+        Invoice: s.invoice_no, Date: formatDate(s.sale_date), Buyer: s.buyers?.name || '',
+        Warehouse: s.warehouses?.name || '', Variety: s.paddy_varieties?.name || '',
+        'Weight (KG)': fmtNum(s.weight_kg), Maund: fmtNum(s.maund), 'Selling Price/Maund': fmtNum(s.selling_price_per_maund),
+        Transport: fmtNum(s.transport_cost), Labour: fmtNum(s.labour_cost), Commission: fmtNum(s.commission),
+        Other: fmtNum(s.other_expenses), 'Net Amount': fmtNum(s.net_amount), 'Net Profit': fmtNum(s.net_profit),
+        'Payment Method': s.payment_method, 'Payment Status': s.payment_status,
+        'Amount Received': fmtNum(s.amount_received), Remarks: s.remarks || ''
+    }));
+
+    const expensesSheet = data.expenses.map(e => ({
+        Date: formatDate(e.expense_date), Category: e.category, Warehouse: e.warehouses?.name || '',
+        Description: e.description || '', Amount: fmtNum(e.amount), 'Payment Method': e.payment_method
+    }));
+
+    const cashAdjustmentsSheet = data.cashAdjustments.map(a => ({
+        Date: formatDate(a.adjustment_date), Type: a.adjustment_type === 'cash_out' ? 'Cash Out' : 'Cash Returned',
+        Amount: fmtNum(a.amount), Reason: a.reason || ''
+    }));
+
+    const damagedStockSheet = data.damagedStock.map(d => ({
+        Date: formatDate(d.damage_date), Type: d.adjustment_type === 'gain' ? 'Gain' : 'Loss',
+        Warehouse: d.warehouses?.name || '', Variety: d.paddy_varieties?.name || '',
+        'Weight (KG)': fmtNum(d.weight_kg), 'Estimated Value': fmtNum(d.estimated_loss), Reason: d.reason || ''
+    }));
+
+    const farmerPaymentsSheet = data.farmerPayments.map(p => ({
+        Date: formatDate(p.payment_date), Farmer: p.farmers?.name || '', Invoice: p.purchases?.invoice_no || '',
+        Amount: fmtNum(p.amount), Method: p.payment_method
+    }));
+
+    const buyerPaymentsSheet = data.buyerPayments.map(p => ({
+        Date: formatDate(p.payment_date), Buyer: p.buyers?.name || '', Invoice: p.sales?.invoice_no || '',
+        Amount: fmtNum(p.amount), Method: p.payment_method
+    }));
+
+    const sheets = [
+        ['Farmers', farmersSheet], ['Buyers', buyersSheet], ['Warehouses', warehousesSheet],
+        ['Paddy Varieties', varietiesSheet], ['Purchases', purchasesSheet], ['Sales', salesSheet],
+        ['Expenses', expensesSheet], ['Cash Adjustments', cashAdjustmentsSheet],
+        ['Stock Adjustments', damagedStockSheet], ['Farmer Payments', farmerPaymentsSheet],
+        ['Buyer Payments', buyerPaymentsSheet]
+    ];
+
+    sheets.forEach(([name, rows]) => {
+        const ws = XLSX.utils.json_to_sheet(rows.length ? rows : [{ 'No records': '' }]);
+        XLSX.utils.book_append_sheet(wb, ws, name);
+    });
+
+    return wb;
+}
+
+document.getElementById('downloadBackupBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('downloadBackupBtn');
+    const btnText = document.getElementById('downloadBackupBtnText');
+    const statusText = document.getElementById('backupStatusText');
+
+    btn.disabled = true;
+    btnText.innerHTML = '<span class="spinner"></span> Preparing backup...';
+    statusText.textContent = '';
+
+    try {
+        const data = await getBackupData();
+        const wb = buildBackupWorkbook(data);
+
+        const dateStamp = new Date().toISOString().split('T')[0];
+        XLSX.writeFile(wb, `rice-erp-backup-${dateStamp}.xlsx`);
+
+        showToast('Backup downloaded successfully.');
+        statusText.textContent = `Last backup: just now (${dateStamp})`;
+    } catch (err) {
+        showToast('Backup failed: ' + err.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btnText.textContent = 'Download Backup (Excel)';
+    }
+});
+
 // ---------- Init ----------
 loadBusinessSettings();
 loadUsers();
+        
