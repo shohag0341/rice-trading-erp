@@ -491,5 +491,13 @@ modalOverlay.addEventListener('click', (e) => {
 
 // ---------- Init ----------
 await loadDropdowns();
-loadPurchases();
-    
+
+const urlParams = new URLSearchParams(window.location.search);
+const urlSearchTerm = urlParams.get('search') || '';
+if (urlSearchTerm) searchInput.value = urlSearchTerm;
+
+loadPurchases(urlSearchTerm);
+
+if (urlParams.get('action') === 'add') {
+    openAddModal();
+}
