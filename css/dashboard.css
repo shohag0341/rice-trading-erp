@@ -104,3 +104,158 @@
 .stat-card:active {
     transform: scale(0.98);
 }
+
+/* ---------- Global Search (dashboard) ---------- */
+.global-search-wrapper {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.global-search-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 13px 16px;
+    box-shadow: var(--shadow-sm);
+}
+
+.global-search-box i { color: var(--text-secondary); font-size: 14px; }
+
+.global-search-box input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 14px;
+    color: var(--text-primary);
+    font-family: inherit;
+}
+
+.global-search-results {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    max-height: 420px;
+    overflow-y: auto;
+    z-index: 50;
+}
+
+.global-search-results.open { display: block; }
+
+.search-result-group-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--text-secondary);
+    padding: 12px 16px 4px;
+}
+
+.search-result-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.search-result-item:hover { background: var(--bg-primary); }
+.search-result-item:last-child { border-bottom: none; }
+.search-result-name { font-weight: 600; font-size: 13px; color: var(--text-primary); }
+.search-result-sub { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+
+.search-empty, .search-loading {
+    padding: 18px 16px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+/* ---------- Floating "+" shortcut ---------- */
+.fab-wrapper {
+    position: fixed;
+    right: 22px;
+    bottom: 24px;
+    z-index: 80;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+}
+
+.fab-btn {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    color: #fff;
+    border: none;
+    font-size: 22px;
+    box-shadow: var(--shadow-lg);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.fab-btn.open { transform: rotate(45deg); }
+
+.fab-menu {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(10px);
+    transition: var(--transition);
+}
+
+.fab-menu.open {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+.fab-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    padding: 6px 6px 6px 18px;
+    box-shadow: var(--shadow-md);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+.fab-menu-icon {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 15px;
+}
+
+@media (max-width: 600px) {
+    .fab-wrapper { right: 16px; bottom: 20px; }
+    }
