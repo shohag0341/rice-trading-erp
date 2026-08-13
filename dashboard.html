@@ -27,6 +27,14 @@
         <header class="top-header" id="topHeader"></header>
 
         <main class="page-content">
+            <div class="global-search-wrapper">
+                <div class="global-search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="globalSearchInput" placeholder="Search farmers, buyers, invoice no...">
+                </div>
+                <div class="global-search-results" id="globalSearchResults"></div>
+            </div>
+
             <div class="stats-grid" id="statsGrid">
                 <div class="skeleton" style="height:120px;"></div>
                 <div class="skeleton" style="height:120px;"></div>
@@ -58,6 +66,21 @@
             </div>
         </main>
     </div>
+</div>
+
+<!-- Floating "+" shortcut: New Purchase / New Sale -->
+<div class="fab-wrapper" id="fabWrapper">
+    <div class="fab-menu" id="fabMenu">
+        <button type="button" class="fab-menu-item" id="fabNewSale">
+            <span>New Sale</span>
+            <span class="fab-menu-icon bg-green"><i class="fa-solid fa-money-bill-trend-up"></i></span>
+        </button>
+        <button type="button" class="fab-menu-item" id="fabNewPurchase">
+            <span>New Purchase</span>
+            <span class="fab-menu-icon bg-blue"><i class="fa-solid fa-cart-shopping"></i></span>
+        </button>
+    </div>
+    <button type="button" class="fab-btn" id="fabToggle"><i class="fa-solid fa-plus"></i></button>
 </div>
 
 <div class="toast-container" id="toastContainer"></div>
