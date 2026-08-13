@@ -455,8 +455,6 @@ function closeModal() {
     editingSaleId = null;
 }
 
-
-
 // ---------- Form submit ----------
 async function handleFormSubmit(e) {
     e.preventDefault();
@@ -611,4 +609,14 @@ modalOverlay.addEventListener('click', (e) => {
 
 // ---------- Init ----------
 await loadDropdowns();
-loadSales();
+
+const urlParams = new URLSearchParams(window.location.search);
+const urlSearchTerm = urlParams.get('search') || '';
+if (urlSearchTerm) searchInput.value = urlSearchTerm;
+
+loadSales(urlSearchTerm);
+
+if (urlParams.get('action') === 'add') {
+    openAddModal();
+}
+     
