@@ -16,7 +16,7 @@ let farmerSearchWidget, warehouseSearchWidget, varietySearchWidget;
 
 
 
-const KG_PER_MAUND = 40;
+let KG_PER_MAUND = 40; // fallback until Business Settings loads
 
 await initLayout('purchases');
 
@@ -460,7 +460,8 @@ async function handlePrintReceipt(id) {
         const business = await getBusinessSettings();
         const due = Number(purchase.gross_amount) - Number(purchase.amount_paid);
 
-        printReceipt({
+
+    printReceipt({
             businessName: business?.business_name || 'Rice Trading ERP Pro',
             businessAddress: business?.address || '',
             businessPhone: business?.phone || '',
@@ -511,6 +512,13 @@ modalOverlay.addEventListener('click', (e) => {
 });
 
 // ---------- Init ----------
+try {
+    const business = await getBusinessSettings();
+    if (business?.kg_per_maund) KG_PER_MAUND = Number(business.kg_per_maund);
+} catch (err) {
+    // Keep the fallback of 40 if settings can't be loaded for some reason
+}
+
 await loadDropdowns();
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -521,4 +529,4 @@ loadPurchases(urlSearchTerm);
 
 if (urlParams.get('action') === 'add') {
     openAddModal();
-            }
+}
