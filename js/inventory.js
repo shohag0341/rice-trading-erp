@@ -6,6 +6,7 @@ import {
 } from './services/inventory-service.js';
 import { getWarehousesForDropdown, getPaddyVarietiesForDropdown } from './services/purchase-service.js';
 import { makeSearchable } from './components/searchable-select.js';
+import { formatDate, formatDateTime } from './utils/date-format.js';
 
 let damageWarehouseWidget, damageVarietyWidget;
 
@@ -122,7 +123,7 @@ async function loadMovements() {
 
         tableBody.innerHTML = movements.map(m => `
             <tr>
-                <td>${new Date(m.created_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</td>
+                <td>${formatDateTime(m.created_at)}</td>
                 <td><span class="movement-type-badge ${movementBadgeClass(m.movement_type)}">${formatMovementType(m.movement_type)}</span></td>
                 <td>${m.warehouses?.name || '-'}</td>
                 <td>${m.paddy_varieties?.name || '-'}</td>
@@ -154,7 +155,7 @@ async function loadDamagedStock() {
             const isGain = d.adjustment_type === 'gain';
             return `
             <tr>
-                <td>${new Date(d.damage_date).toLocaleDateString('en-GB')}</td>
+                <td>${formatDate(d.damage_date)}</td>
                 <td><span class="badge ${isGain ? 'badge-success' : 'badge-danger'}">${isGain ? 'Gain' : 'Loss'}</span></td>
                 <td>${d.warehouses?.name || '-'}</td>
                 <td>${d.paddy_varieties?.name || '-'}</td>
@@ -214,14 +215,33 @@ async function handleDeleteDamage(damageId) {
     if (!record) return;
 
     const isGain = record.adjustment_type === 'gain';
+
+    // Safety check: only needed for Gain records. Deleting a Gain reverses
+    // it (subtracts stock) - if that paddy has already been sold or used
+    // elsewhere, this would push the warehouse's stock negative. Loss
+    // deletions always ADD stock back, so they never need this check.
+    if (isGain) {
+        try {
+            const stock = await getStockForWarehouseVariety(record.warehouse_id, record.paddy_variety_id);
+            const stockAfterDelete = Number(stock.current_weight_kg) - Number(record.weight_kg);
+
+            if (stockAfterDelete < -0.01) {
+                showToast(
+                    `Cannot delete: this paddy has already been sold or used elsewhere. Current stock for this warehouse/variety is only ${fmt(stock.current_weight_kg)} KG, not enough to remove this gain of ${fmt(record.weight_kg)} KG.`,
+                    'error'
+                );
+                return;
+            }
+        } catch (err) {
+            showToast('Could not verify stock before delete: ' + err.message, 'error');
+            return;
+        }
+    }
+
     const confirmed = await confirmDelete(`Delete this ${isGain ? 'gain' : 'loss'} record (${fmt(record.weight_kg)} KG)? This will reverse the stock change.`);
     if (!confirmed) return;
 
     try {
-
-
-
-        
         await deleteDamagedStock(
             record.id,
             record.warehouse_id,
