@@ -17,7 +17,7 @@ import { getBusinessSettings } from './services/settings-service.js';
 let buyerSearchWidget, warehouseSearchWidget, varietySearchWidget;
 
 
-const KG_PER_MAUND = 40;
+let KG_PER_MAUND = 40; // fallback until Business Settings loads
 
 await initLayout('sales');
 
@@ -195,7 +195,7 @@ async function refreshStockAndCost() {
     try {
         const [stock, avgCost] = await Promise.all([
             getAvailableStock(warehouseId, varietyId),
-            getAverageCostPerMaund(warehouseId, varietyId)
+            getAverageCostPerMaund(warehouseId, varietyId, KG_PER_MAUND)
         ]);
 
         currentAvailableStock = Number(stock.current_maund || 0);
@@ -343,7 +343,7 @@ function renderTable(sales) {
 document.getElementById('markReceivedBtn').addEventListener('click', () => {
     const weightKg = parseFloat(document.getElementById('saleWeight').value) || 0;
     const pricePerMaund = parseFloat(document.getElementById('saleSellingPrice').value) || 0;
-    const grossAmount = (weightKg / 40) * pricePerMaund;
+    const grossAmount = (weightKg / KG_PER_MAUND) * pricePerMaund;
 
     if (grossAmount <= 0) {
         showToast('Enter Weight and Selling Price first.', 'error');
@@ -478,7 +478,7 @@ async function handleFormSubmit(e) {
         remarks: document.getElementById('saleRemarks').value.trim(),
     };
 
-    if (!saleData.invoice_no) {
+if (!saleData.invoice_no) {
         showToast('Invoice No is required.', 'error');
         return;
     }
@@ -608,6 +608,13 @@ modalOverlay.addEventListener('click', (e) => {
 });
 
 // ---------- Init ----------
+try {
+    const business = await getBusinessSettings();
+    if (business?.kg_per_maund) KG_PER_MAUND = Number(business.kg_per_maund);
+} catch (err) {
+    // Keep the fallback of 40 if settings can't be loaded for some reason
+}
+
 await loadDropdowns();
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -619,4 +626,3 @@ loadSales(urlSearchTerm);
 if (urlParams.get('action') === 'add') {
     openAddModal();
 }
-     
