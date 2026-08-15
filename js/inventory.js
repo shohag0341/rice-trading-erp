@@ -7,6 +7,9 @@ import {
 import { getWarehousesForDropdown, getPaddyVarietiesForDropdown } from './services/purchase-service.js';
 import { makeSearchable } from './components/searchable-select.js';
 import { formatDate, formatDateTime } from './utils/date-format.js';
+import { getBusinessSettings } from './services/settings-service.js';
+
+let KG_PER_MAUND = 40; // fallback until Business Settings loads
 
 let damageWarehouseWidget, damageVarietyWidget;
 
@@ -60,7 +63,7 @@ async function loadCurrentStock() {
         for (const w of warehouseStocks) {
             await Promise.all(w.varieties.map(async (v) => {
                 try {
-                    v.avg_cost = await getAverageCostPerMaund(w.warehouse_id, v.variety_id);
+                    v.avg_cost = await getAverageCostPerMaund(w.warehouse_id, v.variety_id, KG_PER_MAUND);
                 } catch (e) {
                     v.avg_cost = 0;
                 }
@@ -344,7 +347,7 @@ async function refreshDamageStockInfo() {
     try {
         const stock = await getStockForWarehouseVariety(warehouseId, varietyId);
         currentDamageAvailableStock = Number(stock.current_weight_kg || 0);
-        currentDamageAvgCost = await getAverageCostPerMaund(warehouseId, varietyId);
+        currentDamageAvgCost = await getAverageCostPerMaund(warehouseId, varietyId, KG_PER_MAUND);
 
         const color = (!isGain && currentDamageAvailableStock <= 0) ? 'var(--color-danger)' : 'var(--text-primary)';
         infoBox.innerHTML = `<i class="fa-solid fa-boxes-stacked"></i> Available in warehouse: <strong style="color:${color};">${fmt(currentDamageAvailableStock)} KG</strong> &nbsp;|&nbsp; Avg cost: <strong>৳${fmt(currentDamageAvgCost)}/Md</strong>`;
@@ -360,7 +363,7 @@ function autoFillEstimatedValue() {
     const weightKg = parseFloat(document.getElementById('damageWeight').value) || 0;
     if (weightKg <= 0 || currentDamageAvgCost <= 0) return;
 
-    const estimatedValue = (weightKg / 40) * currentDamageAvgCost;
+    const estimatedValue = (weightKg / KG_PER_MAUND) * currentDamageAvgCost;
     document.getElementById('damageLoss').value = estimatedValue.toFixed(2);
 }
 
@@ -443,5 +446,13 @@ damageForm.addEventListener('submit', async (e) => {
 });
 
 // ---------- Init ----------
+try {
+    const business = await getBusinessSettings();
+    if (business?.kg_per_maund) KG_PER_MAUND = Number(business.kg_per_maund);
+} catch (err) {
+    // Keep the fallback of 40 if settings can't be loaded for some reason
+}
+
 await loadDamageDropdowns();
 loadCurrentStock();
+                       
