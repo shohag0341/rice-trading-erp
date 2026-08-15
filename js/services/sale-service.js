@@ -18,7 +18,12 @@ export async function getBuyersForDropdown() {
 // - purchase_in blends new cost into existing stock value
 // - any "out" movement (sale/damage/transfer) reduces quantity, cost/kg stays the same
 // - if stock hits zero (within tolerance), average resets to 0 so the next purchase starts fresh
-export async function getAverageCostPerMaund(warehouseId, varietyId) {
+//
+// kgPerMaund: the business's actual KG-per-Maund conversion factor (from Business
+// Settings). Defaults to 40 only as a last-resort fallback if a caller doesn't pass
+// one - always pass the real value so this matches how `maund` was computed when
+// each purchase was saved.
+export async function getAverageCostPerMaund(warehouseId, varietyId, kgPerMaund = 40) {
     // 1. Get all movements, oldest first
     const { data: movements, error: movementsError } = await supabase
         .from('stock_movements')
@@ -43,15 +48,11 @@ export async function getAverageCostPerMaund(warehouseId, varietyId) {
             .in('id', purchaseIds);
 
         if (purchasesError) throw purchasesError;
-        
-        
+
         purchases.forEach(p => {
-            const weightKgOfPurchase = Number(p.maund) * 40; // convert maund back to kg
+            const weightKgOfPurchase = Number(p.maund) * kgPerMaund; // convert maund back to kg
             purchaseCostMap[p.id] = weightKgOfPurchase > 0 ? Number(p.net_cost) / weightKgOfPurchase : 0; // true cost per KG
         });
-
-
-        
     }
 
     // 3. Walk through the movements maintaining a true moving weighted average
@@ -86,8 +87,8 @@ export async function getAverageCostPerMaund(warehouseId, varietyId) {
         }
     }
 
-    // Convert cost-per-kg back to cost-per-maund (40kg = 1 maund)
-    return currentAvgCostPerKg * 40;
+    // Convert cost-per-kg back to cost-per-maund using the real conversion factor
+    return currentAvgCostPerKg * kgPerMaund;
 }
 
 // ---------- Get current available stock for a warehouse + variety combo ----------
@@ -207,4 +208,4 @@ export async function generateSaleInvoiceNumber() {
 
     const sequence = String((count || 0) + 1).padStart(3, '0');
     return `SAL-${datePart}-${sequence}`;
-           }
+}
