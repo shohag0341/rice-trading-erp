@@ -10,6 +10,7 @@ import { confirmAction } from './components/confirm-modal.js';
 import { formatDate } from './utils/date-format.js';
 import { printReceipt } from './components/receipt.js';
 import { getBusinessSettings } from './services/settings-service.js';
+import { getStockForWarehouseVariety } from './services/inventory-service.js';
 
 let farmerSearchWidget, warehouseSearchWidget, varietySearchWidget;
 
@@ -414,6 +415,26 @@ async function handleFormSubmit(e) {
 
 async function handleDelete(id) {
     const purchase = allPurchases.find(p => p.id === id);
+    if (!purchase) return;
+
+    // Safety check: if this paddy has already been sold or used elsewhere,
+    // reversing this purchase would push the warehouse's stock negative.
+    // Block the delete in that case instead of letting stock go wrong.
+    try {
+        const stock = await getStockForWarehouseVariety(purchase.warehouse_id, purchase.paddy_variety_id);
+        const stockAfterDelete = Number(stock.current_weight_kg) - Number(purchase.weight_kg);
+
+        if (stockAfterDelete < -0.01) {
+            showToast(
+                `Cannot delete: this paddy has already been sold or used elsewhere. Current stock for this warehouse/variety is only ${fmt(Number(stock.current_weight_kg) / KG_PER_MAUND)} Md, not enough to remove this purchase's ${fmt(purchase.weight_kg / KG_PER_MAUND)} Md.`,
+                'error'
+            );
+            return;
+        }
+    } catch (err) {
+        showToast('Could not verify stock before delete: ' + err.message, 'error');
+        return;
+    }
 
     const confirmed = await confirmAction({
         title: 'Delete Purchase?',
@@ -500,4 +521,4 @@ loadPurchases(urlSearchTerm);
 
 if (urlParams.get('action') === 'add') {
     openAddModal();
-}
+            }
