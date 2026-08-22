@@ -76,6 +76,9 @@ export async function createDamagedStock(damageData, userId) {
     // 2. Also create a stock movement so current_stock reflects the change.
     //    Loss -> negative weight, movement_type 'damage' (kept for backward compatibility with existing data)
     //    Gain -> positive weight, movement_type 'adjustment'
+    //    reference_damage_id links this movement back to the damaged_stock row above, so
+    //    getAverageCostPerMaund() can use its Estimated Value as the real cost of this stock
+    //    instead of defaulting to ৳0.
     const { error: movementError } = await supabase
         .from('stock_movements')
         .insert([{
@@ -83,6 +86,7 @@ export async function createDamagedStock(damageData, userId) {
             paddy_variety_id: damageData.paddy_variety_id,
             movement_type: isGain ? 'adjustment' : 'damage',
             weight_kg: isGain ? damageData.weight_kg : -damageData.weight_kg,
+            reference_damage_id: data.id,
             remarks: damageData.reason,
             created_by: userId
         }]);
@@ -107,7 +111,38 @@ export async function getStockForWarehouseVariety(warehouseId, varietyId) {
 
 // ---------- Delete a stock adjustment record (also reverses the stock movement) ----------
 export async function deleteDamagedStock(damageId, warehouseId, varietyId, weightKg, adjustmentType) {
-    // 1. Delete the damaged_stock record
+    // 1. Find the linked stock_movements row first, via reference_damage_id (reliable for
+    //    records created after this link was added). Falls back to the old heuristic match
+    //    (warehouse+variety+type+weight, most recent) for older records that predate it.
+    const isGain = adjustmentType === 'gain';
+    const movementType = isGain ? 'adjustment' : 'damage';
+    const movementWeight = isGain ? weightKg : -weightKg;
+
+    const { data: linkedMovements, error: linkedFindError } = await supabase
+        .from('stock_movements')
+        .select('id')
+        .eq('reference_damage_id', damageId);
+
+    if (linkedFindError) throw linkedFindError;
+
+    let movementIdsToDelete = (linkedMovements || []).map(m => m.id);
+
+    if (!movementIdsToDelete.length) {
+        const { data: fallbackMovements, error: fallbackFindError } = await supabase
+            .from('stock_movements')
+            .select('id')
+            .eq('warehouse_id', warehouseId)
+            .eq('paddy_variety_id', varietyId)
+            .eq('movement_type', movementType)
+            .eq('weight_kg', movementWeight)
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+        if (fallbackFindError) throw fallbackFindError;
+        movementIdsToDelete = (fallbackMovements || []).map(m => m.id);
+    }
+
+    // 2. Delete the damaged_stock record
     const { error: deleteError } = await supabase
         .from('damaged_stock')
         .delete()
@@ -115,28 +150,12 @@ export async function deleteDamagedStock(damageId, warehouseId, varietyId, weigh
 
     if (deleteError) throw deleteError;
 
-    // 2. Find and delete the matching stock_movements entry to reverse the change
-    const isGain = adjustmentType === 'gain';
-    const movementType = isGain ? 'adjustment' : 'damage';
-    const movementWeight = isGain ? weightKg : -weightKg;
-
-    const { data: movements, error: findError } = await supabase
-        .from('stock_movements')
-        .select('id')
-        .eq('warehouse_id', warehouseId)
-        .eq('paddy_variety_id', varietyId)
-        .eq('movement_type', movementType)
-        .eq('weight_kg', movementWeight)
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-    if (findError) throw findError;
-
-    if (movements && movements.length > 0) {
+    // 3. Delete the matching stock_movements entry to reverse the change
+    if (movementIdsToDelete.length) {
         const { error: movementDeleteError } = await supabase
             .from('stock_movements')
             .delete()
-            .eq('id', movements[0].id);
+            .in('id', movementIdsToDelete);
 
         if (movementDeleteError) throw movementDeleteError;
     }
