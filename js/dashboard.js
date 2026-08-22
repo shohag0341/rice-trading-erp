@@ -4,6 +4,7 @@ import {
     getMonthlyTrend, getTopFarmers, getTopBuyers, getWarehouseUtilization
 } from './services/dashboard-service.js';
 import { globalSearch } from './services/search-service.js';
+import { getBusinessSettings } from './services/settings-service.js';
 
 // Protect the page and render sidebar/header
 await initLayout('dashboard');
@@ -13,11 +14,19 @@ const fmtStock = (num) => new Intl.NumberFormat('en-BD', { maximumFractionDigits
 
 async function loadDashboard() {
     try {
+        let kgPerMaund = 40; // fallback until Business Settings loads
+        try {
+            const business = await getBusinessSettings();
+            if (business?.kg_per_maund) kgPerMaund = Number(business.kg_per_maund);
+        } catch (err) {
+            // Keep the fallback of 40 if settings can't be loaded for some reason
+        }
+
         const [today, cash, stockTotal, stockValue, trend, farmers, buyers, warehouses] = await Promise.all([
             getTodaySummary(),
             getCashBalance(),
             getCurrentStockTotal(),
-            getTotalStockValue(),
+            getTotalStockValue(kgPerMaund),
             getMonthlyTrend(),
             getTopFarmers(5),
             getTopBuyers(5),
@@ -272,4 +281,4 @@ document.getElementById('fabNewSale').addEventListener('click', () => {
 });
 
 loadDashboard();
-                                      
+        
