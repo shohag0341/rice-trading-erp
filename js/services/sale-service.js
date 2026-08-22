@@ -27,7 +27,7 @@ export async function getAverageCostPerMaund(warehouseId, varietyId, kgPerMaund 
     // 1. Get all movements, oldest first
     const { data: movements, error: movementsError } = await supabase
         .from('stock_movements')
-        .select('weight_kg, reference_purchase_id, movement_type, created_at')
+        .select('weight_kg, reference_purchase_id, reference_damage_id, movement_type, created_at')
         .eq('warehouse_id', warehouseId)
         .eq('paddy_variety_id', varietyId)
         .order('created_at', { ascending: true });
@@ -55,6 +55,26 @@ export async function getAverageCostPerMaund(warehouseId, varietyId, kgPerMaund 
         });
     }
 
+    // 2b. Fetch cost info for all referenced Gain adjustments (their Estimated Value)
+    const damageIds = movements
+        .filter(m => m.reference_damage_id)
+        .map(m => m.reference_damage_id);
+
+    let damageCostMap = {};
+    if (damageIds.length) {
+        const { data: damages, error: damagesError } = await supabase
+            .from('damaged_stock')
+            .select('id, estimated_loss, weight_kg')
+            .in('id', damageIds);
+
+        if (damagesError) throw damagesError;
+
+        damages.forEach(d => {
+            const weightKgOfGain = Number(d.weight_kg);
+            damageCostMap[d.id] = weightKgOfGain > 0 ? Number(d.estimated_loss) / weightKgOfGain : 0; // true cost per KG
+        });
+    }
+
     // 3. Walk through the movements maintaining a true moving weighted average
     const ZERO_TOLERANCE_KG = 0.01;
     let currentStockKg = 0;
@@ -64,10 +84,12 @@ export async function getAverageCostPerMaund(warehouseId, varietyId, kgPerMaund 
         const weightKg = Number(m.weight_kg);
 
         if (weightKg > 0) {
-            // Incoming stock (purchase, transfer in)
+            // Incoming stock (purchase, Gain adjustment, transfer in)
             let costPerKg = 0;
             if (m.movement_type === 'purchase_in' && m.reference_purchase_id) {
                 costPerKg = purchaseCostMap[m.reference_purchase_id] || 0;
+            } else if (m.movement_type === 'adjustment' && m.reference_damage_id) {
+                costPerKg = damageCostMap[m.reference_damage_id] || 0;
             }
 
             const existingValue = currentStockKg * currentAvgCostPerKg;
