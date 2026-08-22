@@ -67,7 +67,10 @@ export async function getWarehouseUtilization() {
 
 
 // ---------- Total value of all current stock (quantity × avg cost, per warehouse+variety) ----------
-export async function getTotalStockValue() {
+// kgPerMaund: the business's real KG-per-Maund conversion factor (from Business Settings).
+// Must be passed in by the caller - without it, this silently falls back to 40 and can
+// disagree with the rest of the app if the business uses a different conversion factor.
+export async function getTotalStockValue(kgPerMaund = 40) {
     const { data, error } = await supabase
         .from('current_stock')
         .select('warehouse_id, paddy_variety_id, current_maund');
@@ -77,7 +80,7 @@ export async function getTotalStockValue() {
     const stockedRows = data.filter(row => Number(row.current_maund) > 0);
 
     const costs = await Promise.all(
-        stockedRows.map(row => getAverageCostPerMaund(row.warehouse_id, row.paddy_variety_id).catch(() => 0))
+        stockedRows.map(row => getAverageCostPerMaund(row.warehouse_id, row.paddy_variety_id, kgPerMaund).catch(() => 0))
     );
 
     return stockedRows.reduce((sum, row, i) => sum + (Number(row.current_maund) * costs[i]), 0);
