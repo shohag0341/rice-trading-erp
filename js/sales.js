@@ -254,11 +254,16 @@ function updateCalculationPreview() {
     profitEl.textContent = '৳' + fmt(netProfit);
     profitEl.style.color = netProfit >= 0 ? 'var(--color-accent)' : 'var(--color-danger)';
 
-    // Warn if selling more than available stock
+    // Warn if selling more than available stock (this will now be blocked on submit)
     const weightWarning = document.getElementById('weightWarning');
-    if (currentAvailableStock > 0 && maund > currentAvailableStock) {
+    const originalWeightKgForPreview = editingSaleId
+        ? Number(allSales.find(s => s.id === editingSaleId)?.weight_kg || 0) / KG_PER_MAUND
+        : 0;
+    const effectiveAvailableForPreview = currentAvailableStock + originalWeightKgForPreview;
+
+    if (effectiveAvailableForPreview >= 0 && maund > effectiveAvailableForPreview) {
         weightWarning.style.display = 'block';
-        weightWarning.textContent = `Warning: Selling ${fmt(maund)} Maund but only ${fmt(currentAvailableStock)} Maund available in stock.`;
+        weightWarning.textContent = `Cannot save: selling ${fmt(maund)} Maund but only ${fmt(effectiveAvailableForPreview)} Maund available in stock.`;
     } else {
         weightWarning.style.display = 'none';
     }
@@ -478,7 +483,7 @@ async function handleFormSubmit(e) {
         remarks: document.getElementById('saleRemarks').value.trim(),
     };
 
-if (!saleData.invoice_no) {
+    if (!saleData.invoice_no) {
         showToast('Invoice No is required.', 'error');
         return;
     }
@@ -500,6 +505,23 @@ if (!saleData.invoice_no) {
     }
     if (saleData.weight_kg <= 0) {
         showToast('Weight must be greater than 0.', 'error');
+        return;
+    }
+
+    // Block overselling stock instead of just warning about it. When editing an
+    // existing sale, the live "available stock" figure already has THIS sale's
+    // original weight deducted from it - add that back before comparing, so
+    // keeping the same (or a smaller) weight on an edit is never blocked.
+    const originalSaleWeightKg = editingSaleId
+        ? Number(allSales.find(s => s.id === editingSaleId)?.weight_kg || 0)
+        : 0;
+    const effectiveAvailableKg = (currentAvailableStock * KG_PER_MAUND) + originalSaleWeightKg;
+
+    if (saleData.weight_kg > effectiveAvailableKg + 0.01) {
+        showToast(
+            `Cannot sell ${fmt(saleData.weight_kg / KG_PER_MAUND)} Md — only ${fmt(effectiveAvailableKg / KG_PER_MAUND)} Md available in stock for this warehouse/variety.`,
+            'error'
+        );
         return;
     }
     if (saleData.selling_price_per_maund <= 0) {
@@ -625,4 +647,4 @@ loadSales(urlSearchTerm);
 
 if (urlParams.get('action') === 'add') {
     openAddModal();
-}
+            }
