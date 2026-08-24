@@ -343,6 +343,7 @@ async function renderProfitReport() {
                 
                 <div class="calc-row"><span>Operating Expenses</span><span>- ৳${fmt(report.totalExpenses)}</span></div>
                 <div class="calc-row"><span>Inventory Losses (drying/damage)</span><span>- ৳${fmt(report.totalInventoryLoss)}</span></div>
+                <div class="calc-row"><span>Inventory Gains (surplus found)</span><span>+ ৳${fmt(report.totalInventoryGain)}</span></div>
                 <div class="calc-row total" style="color:${report.netProfit >= 0 ? 'var(--color-accent)' : 'var(--color-danger)'}"><span>Net Profit</span><span>৳${fmt(report.netProfit)}</span></div>
 
 
@@ -386,7 +387,8 @@ async function renderCostAnalysisReport() {
         <div class="summary-mini-card"><div class="summary-mini-label">Grand Total</div><div class="summary-mini-value" style="color:var(--color-danger);">৳${fmt(report.grandTotal)}</div></div>
     `;
 
-    tableContainer.innerHTML = `
+
+tableContainer.innerHTML = `
         <div class="card-box" style="margin-bottom:18px;">
             <div class="card-box-title"><i class="fa-solid fa-cart-shopping"></i> Purchase-side Costs (from buying paddy)</div>
             <div class="calc-summary">
