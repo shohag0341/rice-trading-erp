@@ -1,6 +1,6 @@
 // Handles fetching filtered report data for Purchases, Sales, Expenses, Profit
 import { supabase } from './supabase-client.js';
-import { getInventoryLossesForPeriod } from './inventory-service.js';
+import { getInventoryLossesForPeriod, getInventoryGainsForPeriod } from './inventory-service.js';
 
 
 
@@ -51,19 +51,20 @@ export async function getExpenseReport(startDate, endDate) {
 // Profit report combines sales (revenue) and purchases+expenses (cost) for the period
 
 export async function getProfitReport(startDate, endDate) {
-    const [sales, expenses, totalInventoryLoss] = await Promise.all([
+    const [sales, expenses, totalInventoryLoss, totalInventoryGain] = await Promise.all([
         getSalesReport(startDate, endDate),
         getExpenseReport(startDate, endDate),
-        getInventoryLossesForPeriod(startDate, endDate)
+        getInventoryLossesForPeriod(startDate, endDate),
+        getInventoryGainsForPeriod(startDate, endDate)
     ]);
 
     const totalRevenue = sales.reduce((sum, s) => sum + Number(s.net_amount), 0);
     const totalCogs = sales.reduce((sum, s) => sum + (Number(s.maund) * Number(s.avg_cost_per_maund)), 0);
     const totalExpenses = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
     const grossProfit = totalRevenue - totalCogs;
-    const netProfit = grossProfit - totalExpenses - totalInventoryLoss;
+    const netProfit = grossProfit - totalExpenses - totalInventoryLoss + totalInventoryGain;
 
-    return { sales, expenses, totalRevenue, totalCogs, totalExpenses, totalInventoryLoss, grossProfit, netProfit };
+    return { sales, expenses, totalRevenue, totalCogs, totalExpenses, totalInventoryLoss, totalInventoryGain, grossProfit, netProfit };
 }
 
 
@@ -137,4 +138,4 @@ export async function getCombinedCostReport(startDate, endDate) {
         purchaseCosts, salesCosts, expensesByCategory,
         totalPurchaseCost, totalSalesCost, totalOperatingExpense, grandTotal
     };
-}
+        }
