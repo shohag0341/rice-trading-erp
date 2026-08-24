@@ -162,15 +162,29 @@ export async function deleteDamagedStock(damageId, warehouseId, varietyId, weigh
 }
 
 
-// ---------- Total value of Loss adjustments in a date range (for P&L deduction) ----------
-export async function getInventoryLossesForPeriod(startDate, endDate) {
+// ---------- Total value of Loss or Gain adjustments in a date range (for P&L) ----------
+async function getInventoryAdjustmentTotalForPeriod(adjustmentType, startDate, endDate) {
     const { data, error } = await supabase
         .from('damaged_stock')
         .select('estimated_loss')
-        .eq('adjustment_type', 'loss')
+        .eq('adjustment_type', adjustmentType)
         .gte('damage_date', startDate)
         .lte('damage_date', endDate);
 
     if (error) throw error;
     return data.reduce((sum, row) => sum + Number(row.estimated_loss || 0), 0);
+}
+
+// Total value of Loss adjustments - subtracted from profit (a real loss/expense)
+export async function getInventoryLossesForPeriod(startDate, endDate) {
+    return getInventoryAdjustmentTotalForPeriod('loss', startDate, endDate);
+}
+
+// Total value of Gain adjustments - added to profit as immediate "Other Income",
+// mirroring how a Loss is immediately recognized as an expense. Without this, a
+// Gain's value only ever affects the average cost basis used for future COGS -
+// if that basis happens to equal the eventual selling price, the Gain's value
+// never surfaces as recognized profit anywhere.
+export async function getInventoryGainsForPeriod(startDate, endDate) {
+    return getInventoryAdjustmentTotalForPeriod('gain', startDate, endDate);
 }
