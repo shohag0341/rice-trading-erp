@@ -1,7 +1,7 @@
 // Fetches data from the dashboard/analytics views created in the database
 import { supabase } from './supabase-client.js';
 import { getAverageCostPerMaund } from './sale-service.js';
-import { getInventoryLossesForPeriod } from './inventory-service.js';
+import { getInventoryLossesForPeriod, getInventoryGainsForPeriod } from './inventory-service.js';
 
 
 
@@ -9,14 +9,17 @@ import { getInventoryLossesForPeriod } from './inventory-service.js';
 export async function getTodaySummary() {
     const today = new Date().toISOString().split('T')[0];
 
-    const [purchaseRes, salesRes, todaysLoss] = await Promise.all([
+    const [purchaseRes, salesRes, todaysLoss, todaysGain] = await Promise.all([
         supabase.from('daily_purchase_summary').select('*').eq('purchase_date', today).maybeSingle(),
         supabase.from('daily_sales_summary').select('*').eq('sale_date', today).maybeSingle(),
-        getInventoryLossesForPeriod(today, today)
+        getInventoryLossesForPeriod(today, today),
+        getInventoryGainsForPeriod(today, today)
     ]);
 
     const sales = salesRes.data || { total_net_amount: 0, total_profit: 0, total_maund: 0 };
-    sales.total_profit = Number(sales.total_profit || 0) - todaysLoss;
+    // A Loss is an immediate expense (reduces profit); a Gain is immediate "Other Income"
+    // (increases profit) - symmetric treatment, matching the Reports P&L page.
+    sales.total_profit = Number(sales.total_profit || 0) - todaysLoss + todaysGain;
 
     return {
         purchase: purchaseRes.data || { total_net_cost: 0, total_maund: 0 },
