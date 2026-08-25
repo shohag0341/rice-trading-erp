@@ -16,6 +16,7 @@
 <link rel="stylesheet" href="css/layout.css">
 <link rel="stylesheet" href="css/farmers.css">
 <link rel="stylesheet" href="css/reports.css">
+<link rel="stylesheet" href="css/profile.css">
 </head>
 <body>
 
@@ -27,24 +28,74 @@
         <header class="top-header" id="topHeader"></header>
 
         <main class="page-content">
-            <div class="report-summary-grid" id="summaryGrid"></div>
-
-            <div class="toolbar">
-                <div></div>
-                <button class="btn-primary" id="addAdjustmentBtn">
-                    <i class="fa-solid fa-plus"></i> New Entry
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="adjustmentsTab">
+                    <i class="fa-solid fa-money-bill-transfer"></i> Cash Adjustments
+                </button>
+                <button class="tab-btn" data-tab="cashBookTab">
+                    <i class="fa-solid fa-book"></i> Cash Book
                 </button>
             </div>
 
-            <div class="data-table-wrapper">
-                <table>
-                    <thead>
-                        <tr><th>Date</th><th>Type</th><th>Amount</th><th>Reason</th><th>Actions</th></tr>
-                    </thead>
-                    <tbody id="adjustmentsTableBody">
-                        <tr><td colspan="5" class="table-empty">Loading...</td></tr>
-                    </tbody>
-                </table>
+            <!-- Tab 1: Cash Adjustments (existing) -->
+            <div class="tab-panel active" id="adjustmentsTab">
+                <div class="report-summary-grid" id="summaryGrid"></div>
+
+                <div class="toolbar">
+                    <div></div>
+                    <button class="btn-primary" id="addAdjustmentBtn">
+                        <i class="fa-solid fa-plus"></i> New Entry
+                    </button>
+                </div>
+
+                <div class="data-table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Date</th><th>Type</th><th>Amount</th><th>Reason</th><th>Actions</th></tr>
+                        </thead>
+                        <tbody id="adjustmentsTableBody">
+                            <tr><td colspan="5" class="table-empty">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tab 2: Cash Book (running balance ledger) -->
+            <div class="tab-panel" id="cashBookTab">
+                <div class="report-filters">
+                    <div class="filter-group">
+                        <label>Quick Range</label>
+                        <div class="quick-range-btns">
+                            <button type="button" class="quick-range-btn cb-range-btn" data-range="today">Today</button>
+                            <button type="button" class="quick-range-btn cb-range-btn" data-range="week">This Week</button>
+                            <button type="button" class="quick-range-btn cb-range-btn active" data-range="month">This Month</button>
+                            <button type="button" class="quick-range-btn cb-range-btn" data-range="year">This Year</button>
+                        </div>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Start Date</label>
+                        <input type="date" id="cbStartDate">
+                    </div>
+
+                    <div class="filter-group">
+                        <label>End Date</label>
+                        <input type="date" id="cbEndDate">
+                    </div>
+                </div>
+
+                <div class="report-summary-grid" id="cbSummaryGrid"></div>
+
+                <div class="data-table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Date</th><th>Description</th><th>Type</th><th>Balance Before</th><th>Amount</th><th>Balance After</th></tr>
+                        </thead>
+                        <tbody id="cashBookTableBody">
+                            <tr><td colspan="6" class="table-empty">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </main>
     </div>
