@@ -45,6 +45,7 @@ async function loadBusinessSettings() {
         document.getElementById('businessCurrency').value = settings.currency || 'BDT';
         document.getElementById('kgPerMaund').value = settings.kg_per_maund || 40;
         document.getElementById('lowStockThreshold').value = settings.low_stock_threshold_maund || 100;
+        document.getElementById('openingCashBalance').value = settings.opening_cash_balance || 0;
     } catch (err) {
         showToast('Failed to load business settings: ' + err.message, 'error');
     }
@@ -61,6 +62,7 @@ document.getElementById('businessSettingsForm').addEventListener('submit', async
         currency: document.getElementById('businessCurrency').value,
         kg_per_maund: parseFloat(document.getElementById('kgPerMaund').value) || 40,
         low_stock_threshold_maund: parseFloat(document.getElementById('lowStockThreshold').value) || 100,
+        opening_cash_balance: parseFloat(document.getElementById('openingCashBalance').value) || 0,
     };
 
     const submitBtn = document.getElementById('businessSubmitBtn');
@@ -304,4 +306,5 @@ document.getElementById('downloadBackupBtn').addEventListener('click', async () 
 // ---------- Init ----------
 loadBusinessSettings();
 loadUsers();
-        
+
+            
