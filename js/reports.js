@@ -6,6 +6,7 @@ import {
 import { recordFarmerPayment } from './services/farmer-service.js';
 import { recordBuyerPayment } from './services/buyer-service.js';
 import { formatDate } from './utils/date-format.js';
+import { getInventoryLossesForPeriod, getInventoryGainsForPeriod } from './services/inventory-service.js';
 
 
 await initLayout('reports');
@@ -184,11 +185,21 @@ async function renderPurchaseReport() {
 // ---------- Sales Report ----------
 
 async function renderSalesReport() {
-    const data = await getSalesReport(currentStartDate, currentEndDate);
+    const [data, totalInventoryLoss, totalInventoryGain] = await Promise.all([
+        getSalesReport(currentStartDate, currentEndDate),
+        getInventoryLossesForPeriod(currentStartDate, currentEndDate),
+        getInventoryGainsForPeriod(currentStartDate, currentEndDate)
+    ]);
 
     const totalMaund = data.reduce((s, x) => s + Number(x.maund), 0);
     const totalAmount = data.reduce((s, x) => s + Number(x.net_amount), 0);
-    const totalProfit = data.reduce((s, x) => s + Number(x.net_profit), 0);
+    // Each sale's own stored net_profit is a snapshot from when it was created
+    // (revenue minus its recorded cost basis). This total also folds in this
+    // period's Inventory Loss/Gain adjustments - the same treatment already used
+    // by the Dashboard's "Today's Profit" and the Profit & Loss report - so this
+    // card agrees with those instead of silently excluding stock adjustments.
+    const salesOnlyProfit = data.reduce((s, x) => s + Number(x.net_profit), 0);
+    const totalProfit = salesOnlyProfit - totalInventoryLoss + totalInventoryGain;
     const totalGross = data.reduce((s, x) => s + Number(x.gross_amount), 0);
     const totalReceived = data.reduce((s, x) => s + Number(x.amount_received), 0);
     const totalTransport = data.reduce((s, x) => s + Number(x.transport_cost), 0);
