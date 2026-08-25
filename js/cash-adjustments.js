@@ -1,5 +1,7 @@
 import { initLayout, getCurrentProfile } from './layout.js';
 import { getAllCashAdjustments, createCashAdjustment, deleteCashAdjustment } from './services/cash-service.js';
+import { getCashBookLedger } from './services/cashbook-service.js';
+import { getDateRange } from './services/report-service.js';
 import { confirmAction } from './components/confirm-modal.js';
 import { formatDate } from './utils/date-format.js';
 
@@ -161,3 +163,107 @@ adjustmentForm.addEventListener('submit', handleFormSubmit);
 modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
 
 loadAdjustments();
+
+// ---------- Tab switching ----------
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab).classList.add('active');
+
+        if (btn.dataset.tab === 'cashBookTab' && !cbStartDate) {
+            const range = getDateRange('month');
+            cbStartDate = range.start;
+            cbEndDate = range.end;
+            cbStartDateInput.value = range.start;
+            cbEndDateInput.value = range.end;
+            loadCashBook();
+        }
+    });
+});
+
+// ---------- Cash Book ----------
+const cashBookTableBody = document.getElementById('cashBookTableBody');
+const cbSummaryGrid = document.getElementById('cbSummaryGrid');
+const cbStartDateInput = document.getElementById('cbStartDate');
+const cbEndDateInput = document.getElementById('cbEndDate');
+const cbRangeBtns = document.querySelectorAll('.cb-range-btn');
+
+let cbStartDate = '';
+let cbEndDate = '';
+
+cbRangeBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        cbRangeBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const range = getDateRange(btn.dataset.range);
+        cbStartDate = range.start;
+        cbEndDate = range.end;
+        cbStartDateInput.value = range.start;
+        cbEndDateInput.value = range.end;
+
+        loadCashBook();
+    });
+});
+
+[cbStartDateInput, cbEndDateInput].forEach(input => {
+    input.addEventListener('change', () => {
+        cbRangeBtns.forEach(b => b.classList.remove('active'));
+        cbStartDate = cbStartDateInput.value;
+        cbEndDate = cbEndDateInput.value;
+        if (cbStartDate && cbEndDate) loadCashBook();
+    });
+});
+
+const typeBadge = {
+    purchase: 'badge-danger',
+    expense: 'badge-danger',
+    cash_out: 'badge-danger',
+    sale: 'badge-success',
+    cash_in: 'badge-success'
+};
+
+async function loadCashBook() {
+    if (!cbStartDate || !cbEndDate) return;
+
+    cashBookTableBody.innerHTML = `<tr><td colspan="6" class="table-empty"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</td></tr>`;
+    cbSummaryGrid.innerHTML = `<div class="summary-mini-card"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>`;
+
+    try {
+        const { openingBalance, rows, closingBalance } = await getCashBookLedger(cbStartDate, cbEndDate);
+
+        const totalIn = rows.filter(r => r.amount > 0).reduce((s, r) => s + r.amount, 0);
+        const totalOut = rows.filter(r => r.amount < 0).reduce((s, r) => s + Math.abs(r.amount), 0);
+
+        cbSummaryGrid.innerHTML = `
+            <div class="summary-mini-card"><div class="summary-mini-label">Opening Balance</div><div class="summary-mini-value">৳${fmt(openingBalance)}</div></div>
+            <div class="summary-mini-card"><div class="summary-mini-label">Total Cash In</div><div class="summary-mini-value" style="color:var(--color-accent);">৳${fmt(totalIn)}</div></div>
+            <div class="summary-mini-card"><div class="summary-mini-label">Total Cash Out</div><div class="summary-mini-value" style="color:var(--color-danger);">৳${fmt(totalOut)}</div></div>
+            <div class="summary-mini-card"><div class="summary-mini-label">Closing Balance</div><div class="summary-mini-value" style="color:${closingBalance >= 0 ? 'var(--color-accent)' : 'var(--color-danger)'}">৳${fmt(closingBalance)}</div></div>
+        `;
+
+        if (!rows.length) {
+            cashBookTableBody.innerHTML = `<tr><td colspan="6" class="table-empty"><i class="fa-solid fa-book"></i><div>No cash transactions in this date range.</div></td></tr>`;
+            return;
+        }
+
+        cashBookTableBody.innerHTML = rows.map(r => `
+            <tr>
+                <td>${formatDate(r.date)}</td>
+                <td>${r.description}</td>
+                <td><span class="badge ${typeBadge[r.type] || 'badge-success'}">${r.label}</span></td>
+                <td>৳${fmt(r.balanceBefore)}</td>
+                <td style="font-weight:700; color:${r.amount >= 0 ? 'var(--color-accent)' : 'var(--color-danger)'};">
+                    ${r.amount >= 0 ? '+' : '-'}৳${fmt(Math.abs(r.amount))}
+                </td>
+                <td style="font-weight:700;">৳${fmt(r.balanceAfter)}</td>
+            </tr>
+        `).join('');
+    } catch (err) {
+        showToast('Failed to load cash book: ' + err.message, 'error');
+        cbSummaryGrid.innerHTML = '';
+        cashBookTableBody.innerHTML = `<tr><td colspan="6" class="table-empty">Could not load cash book.</td></tr>`;
+    }
+                            }
