@@ -125,6 +125,10 @@ export async function getCashBookLedger(startDate, endDate) {
         row.balanceAfter = balance;
     });
 
+    // Balance must be computed oldest -> newest (above), but shown newest -> oldest,
+    // like a bank statement. Each row already carries its own correct
+    // balanceBefore/balanceAfter, so reversing the display order here is safe.
+    rows.reverse();
+
     return { openingBalance, rows, closingBalance: balance };
-              }
-              
+}
