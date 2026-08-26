@@ -1,7 +1,7 @@
 import { initLayout } from './layout.js';
 import {
     getTodaySummary, getCashBalance, getCurrentStockTotal, getTotalStockValue,
-    getMonthlyTrend, getTopFarmers, getTopBuyers, getWarehouseUtilization
+    getTrendData, getTopFarmers, getTopBuyers, getWarehouseUtilization
 } from './services/dashboard-service.js';
 import { globalSearch } from './services/search-service.js';
 import { getBusinessSettings } from './services/settings-service.js';
@@ -27,14 +27,14 @@ async function loadDashboard() {
             getCashBalance(),
             getCurrentStockTotal(),
             getTotalStockValue(kgPerMaund),
-            getMonthlyTrend(),
+            getTrendData(currentTrendGranularity),
             getTopFarmers(5),
             getTopBuyers(5),
             getWarehouseUtilization()
         ]);
 
         renderStatCards(today, cash, stockTotal, stockValue);
-        renderTrendChart(trend);
+        renderTrendChart(trend, currentTrendGranularity);
 
 
         
@@ -97,48 +97,98 @@ function renderStatCards(today, cash, stockTotal, stockValue) {
 
 
 let trendChartInstance = null;
+let currentTrendGranularity = 'monthly';
 
-function renderTrendChart(trend) {
+function formatBucketLabel(key, granularity) {
+    if (granularity === 'yearly') return key; // "2026"
+    if (granularity === 'weekly') {
+        const d = new Date(key);
+        return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+    }
+    // monthly & alltime -> key is "YYYY-MM"
+    const [y, m] = key.split('-');
+    return new Date(Number(y), Number(m) - 1, 1).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+}
+
+function renderTrendChart(trend, granularity) {
     const ctx = document.getElementById('trendChart');
-    const labels = trend.map(t => new Date(t.month).toLocaleDateString('en-US', { month: 'short', year: '2-digit' }));
+    const labels = trend.map(t => formatBucketLabel(t.key, granularity));
 
     if (trendChartInstance) trendChartInstance.destroy();
 
+    if (!trend.length) {
+        ctx.getContext('2d').clearRect(0, 0, ctx.width, ctx.height);
+        return;
+    }
+
     trendChartInstance = new Chart(ctx, {
-        type: 'line',
         data: {
             labels,
             datasets: [
                 {
+                    type: 'bar',
                     label: 'Purchase',
-                    data: trend.map(t => t.total_purchase),
-                    borderColor: '#2563eb',
-                    backgroundColor: 'rgba(37,99,235,0.08)',
-                    tension: 0.4, fill: true
+                    data: trend.map(t => t.purchase),
+                    backgroundColor: 'rgba(37,99,235,0.75)',
+                    borderRadius: 4,
+                    order: 2
                 },
                 {
+                    type: 'bar',
                     label: 'Sales',
-                    data: trend.map(t => t.total_sales),
-                    borderColor: '#16a34a',
-                    backgroundColor: 'rgba(22,163,74,0.08)',
-                    tension: 0.4, fill: true
+                    data: trend.map(t => t.sales),
+                    backgroundColor: 'rgba(22,163,74,0.75)',
+                    borderRadius: 4,
+                    order: 2
                 },
                 {
+                    type: 'line',
                     label: 'Profit',
-                    data: trend.map(t => t.total_profit),
+                    data: trend.map(t => t.profit),
                     borderColor: '#f97316',
-                    backgroundColor: 'rgba(249,115,22,0.08)',
-                    tension: 0.4, fill: true
+                    backgroundColor: 'rgba(249,115,22,0.15)',
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 3,
+                    pointBackgroundColor: '#f97316',
+                    order: 1
                 }
             ]
         },
         options: {
             responsive: true,
-            plugins: { legend: { position: 'bottom' } },
-            scales: { y: { beginAtZero: true } }
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: {
+                    callbacks: {
+                        label: (item) => `${item.dataset.label}: ৳${fmt(item.parsed.y)}`
+                    }
+                }
+            },
+            scales: {
+                y: { beginAtZero: true, ticks: { callback: (v) => '৳' + fmt(v) } }
+            }
         }
     });
 }
+
+document.querySelectorAll('.trend-range-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+        if (btn.dataset.range === currentTrendGranularity) return;
+
+        document.querySelectorAll('.trend-range-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentTrendGranularity = btn.dataset.range;
+
+        try {
+            const trend = await getTrendData(currentTrendGranularity);
+            renderTrendChart(trend, currentTrendGranularity);
+        } catch (err) {
+            console.error('Trend chart load error:', err);
+        }
+    });
+});
 
 function renderWarehouseList(warehouses) {
     const container = document.getElementById('warehouseList');
@@ -281,4 +331,5 @@ document.getElementById('fabNewSale').addEventListener('click', () => {
 });
 
 loadDashboard();
-        
+
+                
