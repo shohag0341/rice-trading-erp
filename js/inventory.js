@@ -305,6 +305,7 @@ document.getElementById('addDamageBtn').addEventListener('click', () => {
     currentDamageAvailableStock = 0;
     damageWarehouseWidget?.refresh();
     damageVarietyWidget?.refresh();
+    updateEstimatedValueHint();
     damageModal.classList.add('open');
 });
 
@@ -315,10 +316,22 @@ document.getElementById('damageModalClose').addEventListener('click', () => dama
 document.getElementById('damageCancelBtn').addEventListener('click', () => damageModal.classList.remove('open'));
 damageModal.addEventListener('click', (e) => { if (e.target === damageModal) damageModal.classList.remove('open'); });
 
+function updateEstimatedValueHint() {
+    const isGain = getSelectedAdjustmentType() === 'gain';
+    const hintBox = document.getElementById('estimatedValueHint');
+
+    if (isGain) {
+        hintBox.innerHTML = `<i class="fa-solid fa-circle-info"></i> এই মান এখনই Profit & Loss-এ আয় হিসেবে যোগ হবে, এবং পরে এই ধান বিক্রি করলে সেই বিক্রির খরচ (COGS) হিসেবেও একই মান ধরা হবে — অর্থাৎ সামগ্রিক লাভে দুইবার যোগ হয় না। <strong>ধান সত্যিই বিনামূল্যে (ফ্রি) পাওয়া হলে এখানে ৳০ বসান</strong> — তাহলে এখন কিছু যোগ হবে না, বরং যেদিন বিক্রি হবে সেদিন সেই Sale-এর নিজের Profit-এ এই লাভটা দেখা যাবে।`;
+    } else {
+        hintBox.innerHTML = `<i class="fa-solid fa-circle-info"></i> এই মান এখনই Profit & Loss-এ খরচ (Loss) হিসেবে বিয়োগ হবে।`;
+    }
+}
+
 document.querySelectorAll('input[name="adjustmentType"]').forEach(radio => {
     radio.addEventListener('change', () => {
         document.getElementById('damageWeightWarning').style.display = 'none';
         refreshDamageStockInfo();
+        updateEstimatedValueHint();
     });
 });
 
@@ -455,4 +468,5 @@ try {
 
 await loadDamageDropdowns();
 loadCurrentStock();
-                       
+
+        
