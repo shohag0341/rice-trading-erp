@@ -50,6 +50,78 @@ export async function getMonthlyTrend() {
     return data;
 }
 
+// ---------- Trend chart data (Purchase / Sales / Profit), bucketed by week,
+// month, year, or across all-time (bucketed by month). Computed client-side from
+// raw rows so any time grouping can be produced without a matching DB view.
+// Profit per bucket = that bucket's sale net_profit total, adjusted by Inventory
+// Loss/Gain in the same period - the same treatment used everywhere else in the
+// app (Today's Profit, Sales Report, P&L).
+export async function getTrendData(granularity = 'monthly') {
+    const today = new Date();
+    let startDate = null;
+
+    if (granularity === 'weekly') {
+        const d = new Date(today);
+        d.setDate(d.getDate() - 7 * 11); // last 12 weeks
+        startDate = d.toISOString().split('T')[0];
+    } else if (granularity === 'monthly') {
+        const d = new Date(today.getFullYear(), today.getMonth() - 11, 1); // last 12 months
+        startDate = d.toISOString().split('T')[0];
+    } else if (granularity === 'yearly') {
+        const d = new Date(today.getFullYear() - 4, 0, 1); // last 5 years
+        startDate = d.toISOString().split('T')[0];
+    }
+    // 'alltime' -> startDate stays null (no lower bound), bucketed by month
+
+    let purchaseQuery = supabase.from('purchases').select('purchase_date, net_cost');
+    let salesQuery = supabase.from('sales').select('sale_date, net_amount, net_profit');
+    let lossQuery = supabase.from('damaged_stock').select('damage_date, estimated_loss').eq('adjustment_type', 'loss');
+    let gainQuery = supabase.from('damaged_stock').select('damage_date, estimated_loss').eq('adjustment_type', 'gain');
+
+    if (startDate) {
+        purchaseQuery = purchaseQuery.gte('purchase_date', startDate);
+        salesQuery = salesQuery.gte('sale_date', startDate);
+        lossQuery = lossQuery.gte('damage_date', startDate);
+        gainQuery = gainQuery.gte('damage_date', startDate);
+    }
+
+    const [purchaseRes, salesRes, lossRes, gainRes] = await Promise.all([purchaseQuery, salesQuery, lossQuery, gainQuery]);
+    if (purchaseRes.error) throw purchaseRes.error;
+    if (salesRes.error) throw salesRes.error;
+    if (lossRes.error) throw lossRes.error;
+    if (gainRes.error) throw gainRes.error;
+
+    const bucketKey = (dateStr) => {
+        const d = new Date(dateStr);
+        if (granularity === 'weekly') {
+            const weekStart = new Date(d);
+            weekStart.setDate(d.getDate() - d.getDay()); // Sunday-start week
+            return weekStart.toISOString().split('T')[0];
+        }
+        if (granularity === 'yearly') {
+            return `${d.getFullYear()}`;
+        }
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; // monthly & alltime
+    };
+
+    const buckets = new Map();
+    const ensure = (key) => {
+        if (!buckets.has(key)) buckets.set(key, { key, purchase: 0, sales: 0, profit: 0 });
+        return buckets.get(key);
+    };
+
+    purchaseRes.data.forEach(p => { ensure(bucketKey(p.purchase_date)).purchase += Number(p.net_cost); });
+    salesRes.data.forEach(s => {
+        const b = ensure(bucketKey(s.sale_date));
+        b.sales += Number(s.net_amount);
+        b.profit += Number(s.net_profit);
+    });
+    lossRes.data.forEach(l => { ensure(bucketKey(l.damage_date)).profit -= Number(l.estimated_loss || 0); });
+    gainRes.data.forEach(g => { ensure(bucketKey(g.damage_date)).profit += Number(g.estimated_loss || 0); });
+
+    return Array.from(buckets.keys()).sort().map(k => buckets.get(k));
+}
+
 export async function getTopFarmers(limit = 5) {
     const { data, error } = await supabase.from('top_farmers').select('*').limit(limit);
     if (error) throw error;
