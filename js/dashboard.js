@@ -110,6 +110,17 @@ function formatBucketLabel(key, granularity) {
     return new Date(Number(y), Number(m) - 1, 1).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
 }
 
+// Subtle top-to-transparent gradient fill under a line, stock-chart style.
+// Returns a flat fallback color until the chart area is known (first paint).
+function makeGradientFill(context, hexColor) {
+    const chartArea = context.chart.chartArea;
+    if (!chartArea) return hexColor + '15';
+    const gradient = context.chart.ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+    gradient.addColorStop(0, hexColor + '4D'); // ~30% opacity at the line
+    gradient.addColorStop(1, hexColor + '00'); // fully transparent at the bottom
+    return gradient;
+}
+
 function renderTrendChart(trend, granularity) {
     const ctx = document.getElementById('trendChart');
     const labels = trend.map(t => formatBucketLabel(t.key, granularity));
@@ -121,37 +132,48 @@ function renderTrendChart(trend, granularity) {
         return;
     }
 
+    const lineDefaults = {
+        type: 'line',
+        tension: 0.4,
+        borderWidth: 2,
+        pointRadius: 0,
+        pointHoverRadius: 5,
+        pointHitRadius: 12,
+        pointBackgroundColor: '#fff',
+        pointBorderWidth: 2,
+        fill: true
+    };
+
     trendChartInstance = new Chart(ctx, {
         data: {
             labels,
             datasets: [
                 {
-                    type: 'bar',
+                    ...lineDefaults,
                     label: 'Purchase',
                     data: trend.map(t => t.purchase),
-                    backgroundColor: 'rgba(37,99,235,0.75)',
-                    borderRadius: 4,
-                    order: 2
+                    borderColor: '#2563eb',
+                    pointBorderColor: '#2563eb',
+                    backgroundColor: (c) => makeGradientFill(c, '#2563eb'),
+                    yAxisID: 'y'
                 },
                 {
-                    type: 'bar',
+                    ...lineDefaults,
                     label: 'Sales',
                     data: trend.map(t => t.sales),
-                    backgroundColor: 'rgba(22,163,74,0.75)',
-                    borderRadius: 4,
-                    order: 2
+                    borderColor: '#16a34a',
+                    pointBorderColor: '#16a34a',
+                    backgroundColor: (c) => makeGradientFill(c, '#16a34a'),
+                    yAxisID: 'y'
                 },
                 {
-                    type: 'line',
+                    ...lineDefaults,
                     label: 'Profit',
                     data: trend.map(t => t.profit),
                     borderColor: '#f97316',
-                    backgroundColor: 'rgba(249,115,22,0.15)',
-                    tension: 0.4,
-                    fill: true,
-                    pointRadius: 3,
-                    pointBackgroundColor: '#f97316',
-                    order: 1
+                    pointBorderColor: '#f97316',
+                    backgroundColor: (c) => makeGradientFill(c, '#f97316'),
+                    yAxisID: 'y1'
                 }
             ]
         },
@@ -167,7 +189,20 @@ function renderTrendChart(trend, granularity) {
                 }
             },
             scales: {
-                y: { beginAtZero: true, ticks: { callback: (v) => '৳' + fmt(v) } }
+                y: {
+                    beginAtZero: true,
+                    position: 'left',
+                    title: { display: true, text: 'Purchase / Sales (৳)' },
+                    ticks: { callback: (v) => '৳' + fmt(v) },
+                    grid: { color: 'rgba(0,0,0,0.06)' }
+                },
+                y1: {
+                    beginAtZero: true,
+                    position: 'right',
+                    title: { display: true, text: 'Profit (৳)' },
+                    ticks: { callback: (v) => '৳' + fmt(v) },
+                    grid: { drawOnChartArea: false }
+                }
             }
         }
     });
@@ -332,4 +367,4 @@ document.getElementById('fabNewSale').addEventListener('click', () => {
 
 loadDashboard();
 
-                
+        
