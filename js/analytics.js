@@ -7,6 +7,8 @@ import {
     getTopVillages, getTopVarieties, getVarietyBreakdown
 } from './services/analytics-service.js';
 
+import { getPaddyVarietiesForDropdown } from './services/purchase-service.js';
+
 
 
 import { getDateRange } from './services/report-service.js';
@@ -27,10 +29,28 @@ function showToast(message, type = 'success') {
 
 let currentStartDate = '';
 let currentEndDate = '';
+let currentVarietyId = '';
 
 const startDateInput = document.getElementById('startDate');
 const endDateInput = document.getElementById('endDate');
 const quickRangeBtns = document.querySelectorAll('.quick-range-btn');
+const varietyFilter = document.getElementById('varietyFilter');
+const varietyMixNote = document.getElementById('varietyMixNote');
+
+async function loadVarietyFilterOptions() {
+    try {
+        const varieties = await getPaddyVarietiesForDropdown();
+        varietyFilter.innerHTML = `<option value="">All Varieties</option>` +
+            varieties.map(v => `<option value="${v.id}">${v.name}</option>`).join('');
+    } catch (err) {
+        console.error('Failed to load varieties for filter:', err);
+    }
+}
+
+varietyFilter.addEventListener('change', () => {
+    currentVarietyId = varietyFilter.value;
+    loadSummary();
+});
 
 quickRangeBtns.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -61,8 +81,12 @@ async function loadSummary() {
     const grid = document.getElementById('summaryGrid');
     grid.innerHTML = `<div class="summary-mini-card"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>`;
 
+    // Only relevant when blending all varieties together - a single-variety view
+    // is already an apples-to-apples comparison, so the note would be redundant.
+    varietyMixNote.style.display = currentVarietyId ? 'none' : 'block';
+
     try {
-        const s = await getAnalyticsSummary(currentStartDate, currentEndDate);
+        const s = await getAnalyticsSummary(currentStartDate, currentEndDate, currentVarietyId || null);
 
         grid.innerHTML = `
             <div class="summary-mini-card">
@@ -96,7 +120,10 @@ async function loadVarietyBreakdown() {
     container.innerHTML = `<div class="table-empty"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>`;
 
     try {
-        const breakdown = await getVarietyBreakdown(currentStartDate, currentEndDate);
+        let breakdown = await getVarietyBreakdown(currentStartDate, currentEndDate);
+        if (currentVarietyId) {
+            breakdown = breakdown.filter(b => b.variety_id === currentVarietyId);
+        }
 
         if (!breakdown.length) {
             container.innerHTML = `<div class="table-empty">No purchase/sales activity in this period.</div>`;
@@ -221,6 +248,7 @@ async function loadTopLists() {
 }
 
 // ---------- Init ----------
+loadVarietyFilterOptions();
 document.querySelector('.quick-range-btn[data-range="month"]').click();
 loadBests();
 loadTopLists();
