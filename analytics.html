@@ -48,6 +48,18 @@
                     <label>End Date</label>
                     <input type="date" id="endDate">
                 </div>
+
+                <div class="filter-group">
+                    <label>Variety</label>
+                    <select id="varietyFilter">
+                        <option value="">All Varieties</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="varietyMixNote" style="display:none; font-size:12.5px; color:var(--text-secondary); background:var(--bg-hover, #f4f6fb); border-radius:8px; padding:10px 14px; margin-bottom:14px; line-height:1.6;">
+                <i class="fa-solid fa-circle-info"></i>
+                এই গড় দাম বিভিন্ন জাতের ধান মিলিয়ে হিসাব করা — সরাসরি তুলনা বিভ্রান্তিকর হতে পারে যদি কেনা আর বিক্রির জাতের মিশ্রণ ভিন্ন হয়। সঠিক তুলনার জন্য উপরের <strong>Variety</strong> ফিল্টার দিয়ে একটা নির্দিষ্ট জাত বেছে নিন, অথবা নিচের জাত-ভিত্তিক টেবিল দেখুন।
             </div>
 
             <div class="report-summary-grid" id="summaryGrid"></div>
