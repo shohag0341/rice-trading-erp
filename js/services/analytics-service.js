@@ -6,16 +6,22 @@ import { supabase } from './supabase-client.js';
 
 
 
-export async function getAnalyticsSummary(startDate, endDate) {
-    const [purchasesRes, salesRes, lossesRes] = await Promise.all([
-        supabase.from('purchases').select('maund, price_per_maund, gross_amount')
-            .gte('purchase_date', startDate).lte('purchase_date', endDate),
-        supabase.from('sales').select('maund, selling_price_per_maund, gross_amount, net_profit')
-            .gte('sale_date', startDate).lte('sale_date', endDate),
-        supabase.from('damaged_stock').select('estimated_loss')
-            .eq('adjustment_type', 'loss')
-            .gte('damage_date', startDate).lte('damage_date', endDate)
-    ]);
+export async function getAnalyticsSummary(startDate, endDate, varietyId = null) {
+    let purchaseQuery = supabase.from('purchases').select('maund, price_per_maund, gross_amount, paddy_variety_id')
+        .gte('purchase_date', startDate).lte('purchase_date', endDate);
+    let salesQuery = supabase.from('sales').select('maund, selling_price_per_maund, gross_amount, net_profit, paddy_variety_id')
+        .gte('sale_date', startDate).lte('sale_date', endDate);
+    let lossQuery = supabase.from('damaged_stock').select('estimated_loss, paddy_variety_id')
+        .eq('adjustment_type', 'loss')
+        .gte('damage_date', startDate).lte('damage_date', endDate);
+
+    if (varietyId) {
+        purchaseQuery = purchaseQuery.eq('paddy_variety_id', varietyId);
+        salesQuery = salesQuery.eq('paddy_variety_id', varietyId);
+        lossQuery = lossQuery.eq('paddy_variety_id', varietyId);
+    }
+
+    const [purchasesRes, salesRes, lossesRes] = await Promise.all([purchaseQuery, salesQuery, lossQuery]);
 
     if (purchasesRes.error) throw purchasesRes.error;
     if (salesRes.error) throw salesRes.error;
@@ -137,6 +143,7 @@ export async function getTopVarieties(limit = 5) {
         const profitPerMaund = salesMaund > 0 ? totalProfit / salesMaund : 0;
 
         return {
+            variety_id: v.id,
             variety_name: v.name,
             purchaseMaund, avgPurchasePrice,
             salesMaund, avgSellingPrice,
@@ -149,4 +156,4 @@ export async function getTopVarieties(limit = 5) {
 
     // Only show varieties that had some activity in this period
     return breakdown.filter(b => b.purchaseMaund > 0 || b.salesMaund > 0);
-}
+    }
