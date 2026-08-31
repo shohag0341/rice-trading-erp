@@ -17,6 +17,14 @@
 <link rel="stylesheet" href="css/layout.css">
 <link rel="stylesheet" href="css/dashboard.css">
 <link rel="stylesheet" href="css/reports.css">
+<style>
+    .mini-trend-card { margin-top: 14px; }
+    .mini-trend-card:first-of-type { margin-top: 4px; }
+    .mini-trend-header { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
+    .mini-trend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .mini-trend-label { font-size: 12.5px; font-weight: 600; color: var(--text-secondary); }
+    .mini-trend-total { margin-left: auto; font-size: 13px; font-weight: 700; color: var(--text-primary); }
+</style>
 </head>
 <body>
 
@@ -55,7 +63,33 @@
                             <button type="button" class="quick-range-btn trend-range-btn" data-range="alltime">All Time</button>
                         </div>
                     </div>
-                    <canvas id="trendChart" height="110"></canvas>
+
+                    <div class="mini-trend-card">
+                        <div class="mini-trend-header">
+                            <span class="mini-trend-dot" style="background:#2563eb;"></span>
+                            <span class="mini-trend-label">Purchase</span>
+                            <span class="mini-trend-total" id="purchaseTrendTotal">৳0</span>
+                        </div>
+                        <canvas id="purchaseTrendChart" height="55"></canvas>
+                    </div>
+
+                    <div class="mini-trend-card">
+                        <div class="mini-trend-header">
+                            <span class="mini-trend-dot" style="background:#16a34a;"></span>
+                            <span class="mini-trend-label">Sales</span>
+                            <span class="mini-trend-total" id="salesTrendTotal">৳0</span>
+                        </div>
+                        <canvas id="salesTrendChart" height="55"></canvas>
+                    </div>
+
+                    <div class="mini-trend-card">
+                        <div class="mini-trend-header">
+                            <span class="mini-trend-dot" style="background:#f97316;"></span>
+                            <span class="mini-trend-label">Profit</span>
+                            <span class="mini-trend-total" id="profitTrendTotal">৳0</span>
+                        </div>
+                        <canvas id="profitTrendChart" height="55"></canvas>
+                    </div>
                 </div>
                 <div class="card-box">
                     <div class="card-box-title">Warehouse Utilization</div>
