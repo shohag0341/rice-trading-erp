@@ -150,7 +150,7 @@ function renderTrendChart(trend, granularity) {
             datasets: [
                 {
                     ...lineDefaults,
-                    label: 'Purchase',
+                    label: 'Purchase (Left Axis)',
                     data: trend.map(t => t.purchase),
                     borderColor: '#2563eb',
                     pointBorderColor: '#2563eb',
@@ -159,7 +159,7 @@ function renderTrendChart(trend, granularity) {
                 },
                 {
                     ...lineDefaults,
-                    label: 'Sales',
+                    label: 'Sales (Left Axis)',
                     data: trend.map(t => t.sales),
                     borderColor: '#16a34a',
                     pointBorderColor: '#16a34a',
@@ -168,7 +168,7 @@ function renderTrendChart(trend, granularity) {
                 },
                 {
                     ...lineDefaults,
-                    label: 'Profit',
+                    label: 'Profit (Right Axis)',
                     data: trend.map(t => t.profit),
                     borderColor: '#f97316',
                     pointBorderColor: '#f97316',
@@ -192,15 +192,15 @@ function renderTrendChart(trend, granularity) {
                 y: {
                     beginAtZero: true,
                     position: 'left',
-                    title: { display: true, text: 'Purchase / Sales (৳)' },
-                    ticks: { callback: (v) => '৳' + fmt(v) },
+                    title: { display: true, text: 'Purchase / Sales (৳)', color: '#1e40af' },
+                    ticks: { callback: (v) => '৳' + fmt(v), color: '#1e40af' },
                     grid: { color: 'rgba(0,0,0,0.06)' }
                 },
                 y1: {
                     beginAtZero: true,
                     position: 'right',
-                    title: { display: true, text: 'Profit (৳)' },
-                    ticks: { callback: (v) => '৳' + fmt(v) },
+                    title: { display: true, text: 'Profit (৳) — separate scale', color: '#c2410c' },
+                    ticks: { callback: (v) => '৳' + fmt(v), color: '#c2410c' },
                     grid: { drawOnChartArea: false }
                 }
             }
