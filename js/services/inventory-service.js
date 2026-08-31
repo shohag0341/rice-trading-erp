@@ -114,15 +114,26 @@ export async function getStockForWarehouseVariety(warehouseId, varietyId) {
 // real estimated_loss (which drives actual cost/profit math) - only the informational
 // reference_price_per_maund and its derived reference_value.
 export async function updateDamagedStockReference(damageId, referencePricePerMaund, referenceValue) {
-    const { error } = await supabase
+    const { data, error } = await supabase
         .from('damaged_stock')
         .update({
             reference_price_per_maund: referencePricePerMaund,
             reference_value: referenceValue
         })
-        .eq('id', damageId);
+        .eq('id', damageId)
+        .select();
 
     if (error) throw error;
+
+    // Supabase/PostgREST can return success with an empty array if Row Level
+    // Security silently filtered out the row (e.g. no UPDATE policy exists yet
+    // for this table) - that looks like nothing happened, so surface it clearly
+    // instead of pretending the save worked.
+    if (!data || data.length === 0) {
+        throw new Error('Update didn\'t affect any row - this is very likely a missing UPDATE permission (Row Level Security policy) on the damaged_stock table in Supabase.');
+    }
+
+    return data[0];
 }
 
 // ---------- Delete a stock adjustment record (also reverses the stock movement) ----------
