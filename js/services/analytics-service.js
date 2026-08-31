@@ -51,6 +51,22 @@ export async function getAnalyticsSummary(startDate, endDate, varietyId = null) 
     };
 }
 
+// ---------- Memo total: sum of manually-entered Gain reference values in a period ----------
+// Purely informational (never used in COGS/profit math) - lets the user see roughly
+// how much value their Gains (surplus finds) represented, filterable by date range and variety.
+export async function getGainReferenceValueForPeriod(startDate, endDate, varietyId = null) {
+    let query = supabase.from('damaged_stock').select('reference_value')
+        .eq('adjustment_type', 'gain')
+        .gte('damage_date', startDate).lte('damage_date', endDate)
+        .not('reference_value', 'is', null);
+
+    if (varietyId) query = query.eq('paddy_variety_id', varietyId);
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return data.reduce((sum, row) => sum + Number(row.reference_value || 0), 0);
+}
+
 
 
 
