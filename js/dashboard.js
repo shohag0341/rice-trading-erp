@@ -96,7 +96,9 @@ function renderStatCards(today, cash, stockTotal, stockValue) {
 
 
 
-let trendChartInstance = null;
+let purchaseTrendInstance = null;
+let salesTrendInstance = null;
+let profitTrendInstance = null;
 let currentTrendGranularity = 'monthly';
 
 function formatBucketLabel(key, granularity) {
@@ -121,91 +123,77 @@ function makeGradientFill(context, hexColor) {
     return gradient;
 }
 
-function renderTrendChart(trend, granularity) {
-    const ctx = document.getElementById('trendChart');
-    const labels = trend.map(t => formatBucketLabel(t.key, granularity));
+// One compact, independent single-axis chart - each metric gets its own scale,
+// so nothing is ever visually read against the wrong axis.
+function renderMiniTrendChart(canvasId, existingInstance, values, labels, hexColor) {
+    const ctx = document.getElementById(canvasId);
+    if (existingInstance) existingInstance.destroy();
 
-    if (trendChartInstance) trendChartInstance.destroy();
-
-    if (!trend.length) {
+    if (!values.length) {
         ctx.getContext('2d').clearRect(0, 0, ctx.width, ctx.height);
-        return;
+        return null;
     }
 
-    const lineDefaults = {
+    return new Chart(ctx, {
         type: 'line',
-        tension: 0.4,
-        borderWidth: 2,
-        pointRadius: 0,
-        pointHoverRadius: 5,
-        pointHitRadius: 12,
-        pointBackgroundColor: '#fff',
-        pointBorderWidth: 2,
-        fill: true
-    };
-
-    trendChartInstance = new Chart(ctx, {
         data: {
             labels,
-            datasets: [
-                {
-                    ...lineDefaults,
-                    label: 'Purchase (Left Axis)',
-                    data: trend.map(t => t.purchase),
-                    borderColor: '#2563eb',
-                    pointBorderColor: '#2563eb',
-                    backgroundColor: (c) => makeGradientFill(c, '#2563eb'),
-                    yAxisID: 'y'
-                },
-                {
-                    ...lineDefaults,
-                    label: 'Sales (Left Axis)',
-                    data: trend.map(t => t.sales),
-                    borderColor: '#16a34a',
-                    pointBorderColor: '#16a34a',
-                    backgroundColor: (c) => makeGradientFill(c, '#16a34a'),
-                    yAxisID: 'y'
-                },
-                {
-                    ...lineDefaults,
-                    label: 'Profit (Right Axis)',
-                    data: trend.map(t => t.profit),
-                    borderColor: '#f97316',
-                    pointBorderColor: '#f97316',
-                    backgroundColor: (c) => makeGradientFill(c, '#f97316'),
-                    yAxisID: 'y1'
-                }
-            ]
+            datasets: [{
+                data: values,
+                borderColor: hexColor,
+                backgroundColor: (c) => makeGradientFill(c, hexColor),
+                tension: 0.4,
+                borderWidth: 2,
+                pointRadius: 0,
+                pointHoverRadius: 4,
+                pointHitRadius: 12,
+                pointBackgroundColor: '#fff',
+                pointBorderColor: hexColor,
+                pointBorderWidth: 2,
+                fill: true
+            }]
         },
         options: {
             responsive: true,
             interaction: { mode: 'index', intersect: false },
             plugins: {
-                legend: { position: 'bottom' },
+                legend: { display: false },
                 tooltip: {
                     callbacks: {
-                        label: (item) => `${item.dataset.label}: ৳${fmt(item.parsed.y)}`
+                        title: (items) => items[0]?.label || '',
+                        label: (item) => `৳${fmt(item.parsed.y)}`
                     }
                 }
             },
             scales: {
                 y: {
                     beginAtZero: true,
-                    position: 'left',
-                    title: { display: true, text: 'Purchase / Sales (৳)', color: '#1e40af' },
-                    ticks: { callback: (v) => '৳' + fmt(v), color: '#1e40af' },
-                    grid: { color: 'rgba(0,0,0,0.06)' }
+                    ticks: { callback: (v) => '৳' + fmt(v), font: { size: 9 }, maxTicksLimit: 3 },
+                    grid: { color: 'rgba(0,0,0,0.05)' }
                 },
-                y1: {
-                    beginAtZero: true,
-                    position: 'right',
-                    title: { display: true, text: 'Profit (৳) — separate scale', color: '#c2410c' },
-                    ticks: { callback: (v) => '৳' + fmt(v), color: '#c2410c' },
-                    grid: { drawOnChartArea: false }
+                x: {
+                    ticks: { font: { size: 9 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 6 },
+                    grid: { display: false }
                 }
             }
         }
     });
+}
+
+function renderTrendChart(trend, granularity) {
+    const labels = trend.map(t => formatBucketLabel(t.key, granularity));
+
+    const purchaseValues = trend.map(t => t.purchase);
+    const salesValues = trend.map(t => t.sales);
+    const profitValues = trend.map(t => t.profit);
+
+    document.getElementById('purchaseTrendTotal').textContent = '৳' + fmt(purchaseValues.reduce((s, v) => s + v, 0));
+    document.getElementById('salesTrendTotal').textContent = '৳' + fmt(salesValues.reduce((s, v) => s + v, 0));
+    document.getElementById('profitTrendTotal').textContent = '৳' + fmt(profitValues.reduce((s, v) => s + v, 0));
+
+    purchaseTrendInstance = renderMiniTrendChart('purchaseTrendChart', purchaseTrendInstance, purchaseValues, labels, '#2563eb');
+    salesTrendInstance = renderMiniTrendChart('salesTrendChart', salesTrendInstance, salesValues, labels, '#16a34a');
+    profitTrendInstance = renderMiniTrendChart('profitTrendChart', profitTrendInstance, profitValues, labels, '#f97316');
 }
 
 document.querySelectorAll('.trend-range-btn').forEach(btn => {
@@ -367,4 +355,4 @@ document.getElementById('fabNewSale').addEventListener('click', () => {
 
 loadDashboard();
 
-        
+                                                            
