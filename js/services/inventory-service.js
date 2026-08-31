@@ -109,6 +109,22 @@ export async function getStockForWarehouseVariety(warehouseId, varietyId) {
     return data || { current_maund: 0, current_weight_kg: 0 };
 }
 
+// ---------- Update only the memo reference price/value on an existing Gain record ----------
+// Scoped deliberately narrow: never touches warehouse, variety, weight, date, or the
+// real estimated_loss (which drives actual cost/profit math) - only the informational
+// reference_price_per_maund and its derived reference_value.
+export async function updateDamagedStockReference(damageId, referencePricePerMaund, referenceValue) {
+    const { error } = await supabase
+        .from('damaged_stock')
+        .update({
+            reference_price_per_maund: referencePricePerMaund,
+            reference_value: referenceValue
+        })
+        .eq('id', damageId);
+
+    if (error) throw error;
+}
+
 // ---------- Delete a stock adjustment record (also reverses the stock movement) ----------
 export async function deleteDamagedStock(damageId, warehouseId, varietyId, weightKg, adjustmentType) {
     // 1. Find the linked stock_movements row first, via reference_damage_id (reliable for
@@ -187,4 +203,22 @@ export async function getInventoryLossesForPeriod(startDate, endDate) {
 // never surfaces as recognized profit anywhere.
 export async function getInventoryGainsForPeriod(startDate, endDate) {
     return getInventoryAdjustmentTotalForPeriod('gain', startDate, endDate);
+}
+
+// Memo total: for Gains recorded at ৳0 (a genuinely free find), the profit isn't
+// recognized here - it's already flowing through into whichever future Sale
+// consumes that stock (lower average cost -> lower COGS -> higher Sale profit).
+// This never affects any cost/profit calculation - it's purely a reference figure
+// so that value isn't invisible from the P&L period it was actually found in.
+export async function getFreeGainMemoValueForPeriod(startDate, endDate) {
+    const { data, error } = await supabase
+        .from('damaged_stock')
+        .select('reference_value')
+        .eq('adjustment_type', 'gain')
+        .eq('estimated_loss', 0)
+        .gte('damage_date', startDate)
+        .lte('damage_date', endDate);
+
+    if (error) throw error;
+    return data.reduce((sum, row) => sum + Number(row.reference_value || 0), 0);
 }
