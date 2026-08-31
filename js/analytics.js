@@ -4,7 +4,7 @@ import { initLayout } from './layout.js';
 
 import {
     getAnalyticsSummary, getBestVillage, getBestFarmer, getBestBuyer, getBestVariety,
-    getTopVillages, getTopVarieties, getVarietyBreakdown
+    getTopVillages, getTopVarieties, getVarietyBreakdown, getGainReferenceValueForPeriod
 } from './services/analytics-service.js';
 
 import { getPaddyVarietiesForDropdown } from './services/purchase-service.js';
@@ -86,7 +86,10 @@ async function loadSummary() {
     varietyMixNote.style.display = currentVarietyId ? 'none' : 'block';
 
     try {
-        const s = await getAnalyticsSummary(currentStartDate, currentEndDate, currentVarietyId || null);
+        const [s, gainRefValue] = await Promise.all([
+            getAnalyticsSummary(currentStartDate, currentEndDate, currentVarietyId || null),
+            getGainReferenceValueForPeriod(currentStartDate, currentEndDate, currentVarietyId || null)
+        ]);
 
         grid.innerHTML = `
             <div class="summary-mini-card">
@@ -104,6 +107,10 @@ async function loadSummary() {
             <div class="summary-mini-card">
                 <div class="summary-mini-label">Inventory Turnover</div>
                 <div class="summary-mini-value">${fmt(s.inventoryTurnover)}%</div>
+            </div>
+            <div class="summary-mini-card">
+                <div class="summary-mini-label">Gain Value (Reference)</div>
+                <div class="summary-mini-value">৳${fmt(gainRefValue)}</div>
             </div>
         `;
     } catch (err) {
