@@ -357,8 +357,15 @@ async function renderProfitReport() {
                 <div class="calc-row"><span>Inventory Gains (surplus found)</span><span>+ ৳${fmt(report.totalInventoryGain)}</span></div>
                 <div class="calc-row total" style="color:${report.netProfit >= 0 ? 'var(--color-accent)' : 'var(--color-danger)'}"><span>Net Profit</span><span>৳${fmt(report.netProfit)}</span></div>
 
-
-                
+                ${report.freeGainMemoValue > 0 ? `
+                <div class="calc-row" style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border-color, #e2e5eb); font-size:12.5px; color:var(--text-secondary); font-style:italic;">
+                    <span><i class="fa-solid fa-circle-info"></i> Est. Value of ৳0 Gains this period (memo)</span>
+                    <span>৳${fmt(report.freeGainMemoValue)}</span>
+                </div>
+                <div style="font-size:11.5px; color:var(--text-secondary); margin-top:-4px; line-height:1.5;">
+                    এই মান ইতিমধ্যে উপরের Sales profit-এর মধ্যে অন্তর্ভুক্ত (কম avg cost হিসেবে) — Net Profit-এ আলাদা করে যোগ হয়নি, শুধু তথ্যসূচক।
+                </div>
+                ` : ''}
             </div>
         </div>
 
