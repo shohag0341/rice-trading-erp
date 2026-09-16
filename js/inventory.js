@@ -410,6 +410,11 @@ document.getElementById('damageWeight').addEventListener('input', updateGainRefT
 document.querySelectorAll('input[name="adjustmentType"]').forEach(radio => {
     radio.addEventListener('change', () => {
         document.getElementById('damageWeightWarning').style.display = 'none';
+
+        if (getSelectedAdjustmentType() === 'gain') {
+            document.getElementById('damageLoss').value = 0;
+        }
+
         refreshDamageStockInfo();
         updateEstimatedValueHint();
     });
@@ -453,6 +458,14 @@ async function refreshDamageStockInfo() {
 }
 
 function autoFillEstimatedValue() {
+    // Gain: Estimated Value always starts at ৳0 (a conscious choice, not an
+    // auto-filled suggestion) - immediate profit recognition should be
+    // deliberate, not something that happens by forgetting a pre-filled number
+    // was there. Loss keeps the auto-fill, since a suggested loss estimate is
+    // still useful and doesn't carry the same "accidental income" risk.
+    const isGain = getSelectedAdjustmentType() === 'gain';
+    if (isGain) return;
+
     const weightKg = parseFloat(document.getElementById('damageWeight').value) || 0;
     if (weightKg <= 0 || currentDamageAvgCost <= 0) return;
 
@@ -556,4 +569,4 @@ try {
 
 await loadDamageDropdowns();
 loadCurrentStock();
-                     
+
