@@ -51,7 +51,7 @@ export async function getCashBookLedger(startDate, endDate) {
             .select('expense_date, created_at, category, description, amount')
             .gte('expense_date', startDate).lte('expense_date', endDate),
         supabase.from('cash_adjustments')
-            .select('adjustment_date, created_at, adjustment_type, amount, reason')
+            .select('adjustment_date, created_at, adjustment_type, amount, reason, category')
             .gte('adjustment_date', startDate).lte('adjustment_date', endDate),
     ]);
 
@@ -101,12 +101,16 @@ export async function getCashBookLedger(startDate, endDate) {
         });
     });
 
+    const categoryLabel = { owners_drawing: "Owner's Drawing", rent: 'Rent', other: 'Other' };
+
     adjustments.data.forEach(a => {
         rows.push({
             date: a.adjustment_date,
             created_at: a.created_at,
             type: a.adjustment_type,
-            label: a.adjustment_type === 'cash_out' ? 'Cash Out' : 'Cash Returned',
+            label: a.adjustment_type === 'cash_out'
+                ? (categoryLabel[a.category] ? `Cash Out (${categoryLabel[a.category]})` : 'Cash Out')
+                : 'Cash Returned',
             description: a.reason || '-',
             amount: a.adjustment_type === 'cash_out' ? -Number(a.amount) : Number(a.amount)
         });
