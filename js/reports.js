@@ -1,7 +1,7 @@
 import { initLayout, getCurrentProfile } from './layout.js';
 import {
     getPurchaseReport, getSalesReport, getExpenseReport, getProfitReport, getDateRange,
-    getCombinedCostReport
+    getCombinedCostReport, getOwnersDrawingReport
 } from './services/report-service.js';
 import { recordFarmerPayment } from './services/farmer-service.js';
 import { recordBuyerPayment } from './services/buyer-service.js';
@@ -91,6 +91,8 @@ async function loadReport() {
             await renderExpenseReport();
 
             
+        } else if (currentReportType === 'owners_drawing') {
+            await renderOwnersDrawingReport();
         } else if (currentReportType === 'profit') {
             await renderProfitReport();
         } else if (currentReportType === 'costanalysis') {
@@ -313,6 +315,39 @@ async function renderExpenseReport() {
     `;
 }
 
+// ---------- Owner's Drawings Report ----------
+async function renderOwnersDrawingReport() {
+    const data = await getOwnersDrawingReport(currentStartDate, currentEndDate);
+    const totalAmount = data.reduce((s, a) => s + Number(a.amount), 0);
+
+    summaryGrid.innerHTML = `
+        <div class="summary-mini-card"><div class="summary-mini-label">Transactions</div><div class="summary-mini-value">${data.length}</div></div>
+        <div class="summary-mini-card"><div class="summary-mini-label">Total Owner's Drawings</div><div class="summary-mini-value">৳${fmt(totalAmount)}</div></div>
+    `;
+
+    if (!data.length) {
+        tableContainer.innerHTML = `<div class="table-empty"><i class="fa-solid fa-inbox"></i><div>No Owner's Drawings in this date range.</div></div>`;
+        return;
+    }
+
+    tableContainer.innerHTML = `
+        <div class="data-table-wrapper">
+            <table>
+                <thead><tr><th>Date</th><th>Reason</th><th>Amount</th></tr></thead>
+                <tbody>
+                    ${data.map(a => `
+                        <tr>
+                            <td>${formatDate(a.adjustment_date)}</td>
+                            <td>${a.reason || '-'}</td>
+                            <td>৳${fmt(a.amount)}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
 // ---------- Profit Report ----------
 async function renderProfitReport() {
     const report = await getProfitReport(currentStartDate, currentEndDate);
@@ -350,7 +385,6 @@ async function renderProfitReport() {
                 <div class="calc-row"><span>Cost of Goods Sold</span><span>- ৳${fmt(report.totalCogs)}</span></div>
                 <div class="calc-row total"><span>Gross Profit</span><span>৳${fmt(report.grossProfit)}</span></div>
                
-                
                 
                 <div class="calc-row"><span>Operating Expenses</span><span>- ৳${fmt(report.totalExpenses)}</span></div>
                 <div class="calc-row"><span>Inventory Losses (drying/damage)</span><span>- ৳${fmt(report.totalInventoryLoss)}</span></div>
