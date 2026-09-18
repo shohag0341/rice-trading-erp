@@ -75,7 +75,7 @@ function renderTable(adjustments) {
         return;
     }
 
-    const categoryLabel = { owners_drawing: "Owner's Drawing", rent: 'Rent', other: 'Other' };
+    const categoryLabel = { owners_drawing: "Owner's Drawing", other: 'Other' };
 
     tableBody.innerHTML = adjustments.map(a => `
         <tr>
@@ -288,4 +288,4 @@ async function loadCashBook() {
         cbSummaryGrid.innerHTML = '';
         cashBookTableBody.innerHTML = `<tr><td colspan="6" class="table-empty">Could not load cash book.</td></tr>`;
     }
-                                                                                  }
+                                     }
