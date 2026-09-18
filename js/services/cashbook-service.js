@@ -101,7 +101,7 @@ export async function getCashBookLedger(startDate, endDate) {
         });
     });
 
-    const categoryLabel = { owners_drawing: "Owner's Drawing", rent: 'Rent', other: 'Other' };
+    const categoryLabel = { owners_drawing: "Owner's Drawing", other: 'Other' };
 
     adjustments.data.forEach(a => {
         rows.push({
