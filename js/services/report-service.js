@@ -48,6 +48,23 @@ export async function getExpenseReport(startDate, endDate) {
     return data;
 }
 
+// Owner's Drawings - Cash Out entries categorized as personal/household use.
+// Purely informational (never affects P&L Net Profit or Expenses), but tracked
+// here so it can be reviewed and totaled over any date range.
+export async function getOwnersDrawingReport(startDate, endDate) {
+    const { data, error } = await supabase
+        .from('cash_adjustments')
+        .select('*')
+        .eq('adjustment_type', 'cash_out')
+        .eq('category', 'owners_drawing')
+        .gte('adjustment_date', startDate)
+        .lte('adjustment_date', endDate)
+        .order('adjustment_date', { ascending: false });
+
+    if (error) throw error;
+    return data;
+}
+
 // Profit report combines sales (revenue) and purchases+expenses (cost) for the period
 
 export async function getProfitReport(startDate, endDate) {
@@ -139,4 +156,4 @@ export async function getCombinedCostReport(startDate, endDate) {
         purchaseCosts, salesCosts, expensesByCategory,
         totalPurchaseCost, totalSalesCost, totalOperatingExpense, grandTotal
     };
-                                }
+}
