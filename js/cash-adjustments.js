@@ -45,6 +45,9 @@ function renderSummary(adjustments) {
     const totalOut = adjustments.filter(a => a.adjustment_type === 'cash_out').reduce((s, a) => s + Number(a.amount), 0);
     const totalIn = adjustments.filter(a => a.adjustment_type === 'cash_in').reduce((s, a) => s + Number(a.amount), 0);
     const netOutstanding = totalOut - totalIn;
+    const totalDrawings = adjustments
+        .filter(a => a.adjustment_type === 'cash_out' && a.category === 'owners_drawing')
+        .reduce((s, a) => s + Number(a.amount), 0);
 
     document.getElementById('summaryGrid').innerHTML = `
         <div class="summary-mini-card">
@@ -59,14 +62,20 @@ function renderSummary(adjustments) {
             <div class="summary-mini-label">Not Yet Returned</div>
             <div class="summary-mini-value" style="color:${netOutstanding > 0 ? 'var(--color-warning)' : 'var(--color-accent)'};">৳${fmt(netOutstanding)}</div>
         </div>
+        <div class="summary-mini-card">
+            <div class="summary-mini-label">Owner's Drawings (All Time)</div>
+            <div class="summary-mini-value">৳${fmt(totalDrawings)}</div>
+        </div>
     `;
 }
 
 function renderTable(adjustments) {
     if (!adjustments.length) {
-        tableBody.innerHTML = `<tr><td colspan="5" class="table-empty"><i class="fa-solid fa-money-bill-transfer"></i><div>No cash adjustments recorded yet.</div></td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="6" class="table-empty"><i class="fa-solid fa-money-bill-transfer"></i><div>No cash adjustments recorded yet.</div></td></tr>`;
         return;
     }
+
+    const categoryLabel = { owners_drawing: "Owner's Drawing", rent: 'Rent', other: 'Other' };
 
     tableBody.innerHTML = adjustments.map(a => `
         <tr>
@@ -76,6 +85,7 @@ function renderTable(adjustments) {
                     ${a.adjustment_type === 'cash_out' ? 'Cash Out' : 'Cash Returned'}
                 </span>
             </td>
+            <td>${categoryLabel[a.category] || '-'}</td>
             <td style="font-weight:700; color:${a.adjustment_type === 'cash_out' ? 'var(--color-danger)' : 'var(--color-accent)'};">
                 ${a.adjustment_type === 'cash_out' ? '-' : '+'}৳${fmt(a.amount)}
             </td>
@@ -98,8 +108,17 @@ function renderTable(adjustments) {
 function openAddModal() {
     adjustmentForm.reset();
     document.getElementById('adjustmentDate').value = new Date().toISOString().split('T')[0];
+    toggleCategoryVisibility();
     modalOverlay.classList.add('open');
 }
+
+function toggleCategoryVisibility() {
+    const isCashOut = document.getElementById('adjustmentType').value === 'cash_out';
+    document.getElementById('adjustmentCategoryGroup').style.display = isCashOut ? 'block' : 'none';
+    if (!isCashOut) document.getElementById('adjustmentCategory').value = '';
+}
+
+document.getElementById('adjustmentType').addEventListener('change', toggleCategoryVisibility);
 
 function closeModal() {
     modalOverlay.classList.remove('open');
@@ -114,6 +133,9 @@ async function handleFormSubmit(e) {
         adjustment_type: document.getElementById('adjustmentType').value,
         amount: parseFloat(document.getElementById('adjustmentAmount').value) || 0,
         reason: document.getElementById('adjustmentReason').value.trim(),
+        category: document.getElementById('adjustmentType').value === 'cash_out'
+            ? (document.getElementById('adjustmentCategory').value || null)
+            : null,
     };
 
     if (adjustmentData.amount <= 0) {
@@ -266,4 +288,4 @@ async function loadCashBook() {
         cbSummaryGrid.innerHTML = '';
         cashBookTableBody.innerHTML = `<tr><td colspan="6" class="table-empty">Could not load cash book.</td></tr>`;
     }
-                            }
+                                                                                  }
