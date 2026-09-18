@@ -22,6 +22,7 @@ const NAV_ITEMS = [
             { label: 'Purchase Report', href: 'reports.html?type=purchase' },
             { label: 'Sales Report', href: 'reports.html?type=sales' },
             { label: 'Expense Report', href: 'reports.html?type=expense' },
+            { label: "Owner's Drawings", href: 'reports.html?type=owners_drawing' },
             { label: 'Profit & Loss', href: 'reports.html?type=profit' },
             { label: 'Cost Analysis', href: 'reports.html?type=costanalysis' },
         ]
